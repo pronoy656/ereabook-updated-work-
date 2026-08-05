@@ -1,0 +1,68 @@
+API Call Sequence: Instant Call Lifecycle
+===================================================
+
+This document outlines the sequential API calls triggered during the lifecycle of an **Instant Consultation Call**, from the moment a consultant accepts the request to when the call is ended.
+
+---
+
+### 1. ACCEPTING AN INSTANT REQUEST (Consultant Dashboard)
+
+When the consultant clicks the green "Accept" button for an Instant Request:
+
+1. `PATCH /consultation/status/{consultationId}`
+   - Payload: `{ status: "accepted" }`
+   - Purpose: Marks the request as initially accepted.
+
+2. `PATCH /consultation/status/{consultationId}`
+   - Payload: `{ status: "confirmed" }`
+   - Purpose: Locks the booking and confirms the session.
+   
+   - *Action:* The consultant is immediately redirected to the Call Page (`/call?consultationId={id}`).
+
+---
+
+### 2. INITIALIZING & JOINING THE CALL (Call Page)
+
+Upon entering the Call Page, the system automatically initializes the video session and fetches required details.
+
+3. `POST /video-session/create`
+   - Payload: `{ consultationId }`
+   - Purpose: Creates a new video session for the consultation on the backend.
+   - *Fallback:* If a session already exists (e.g., Duplicate Key Error), it calls `GET /video-session` to fetch all active sessions and finds the matching session.
+
+4. `POST /video-session/join`
+   - Payload: `{ sessionId }`
+   - Purpose: Joins the active session. This retrieves the necessary RTC credentials (token, channelName, appId, uid) and triggers billing/time-tracking on the backend.
+
+5. `GET /consultation/my-bookings`
+   - Purpose: Fetches the consultant's bookings to extract the specific client's details, notes, and topic to display on the contextual sidebar during the call.
+
+---
+
+### 3. LIVE SESSION AGORA / TRANSCRIPTION INIT (Call Page / RealTime Hook)
+
+Once the Agora credentials (from Step 4) are successfully used to join the channel:
+
+6. `POST /transcription/{consultationId}/start`
+   - Payload: `{ channelName: "..." }`
+   - Purpose: Instructs the backend to start the Agora Real-Time Transcription (STT) service bot. The bot (UID 9001) will enter the channel to listen and transcribe speech.
+
+7. `POST /transcription/{consultationId}/ingest`
+   - Payload: `{ uid, text, isFinal, timestamp }`
+   - Purpose: *[Called repeatedly during the call]* As the STT bot sends transcription fragments via Agora's data stream, the frontend relays these payloads to the backend for persistence and broadcasting to clients.
+
+---
+
+### 4. ENDING THE CALL (Call Page)
+
+When the consultant clicks the "End Call" button or the session automatically ends.
+
+8. `POST /video-session/end`
+   - Payload: `{ sessionId }`
+   - Purpose: Gracefully terminates the video session, stops the billing timer, and closes the channel on the server.
+
+9. `PATCH /consultation/status/{consultationId}`
+   - Payload: `{ status: "completed" }`
+   - Purpose: Updates the consultation status to 'completed'.
+   
+   - *Action:* The user is redirected back to the dashboard safely.
