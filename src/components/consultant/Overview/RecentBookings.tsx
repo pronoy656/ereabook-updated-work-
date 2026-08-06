@@ -5,51 +5,8 @@ import Link from 'next/link';
 import api from '@/lib/axios';
 import { getImageUrl } from '@/lib/utils';
 
-const mockBookings = [
-  {
-    id: 1,
-    client: { name: 'Sarah Johnson', email: 'sarah.johnson@email.com', avatar: 'https://i.pravatar.cc/150?img=5' },
-    service: { name: 'Business Strategy', color: 'bg-purple-500' },
-    datetime: 'May 21, 2025 • 10:00 AM',
-    type: 'Video Call',
-    status: 'Upcoming',
-  },
-  {
-    id: 2,
-    client: { name: 'Michael Brown', email: 'michael.brown@email.com', avatar: 'https://i.pravatar.cc/150?img=11' },
-    service: { name: 'Marketing Consultation', color: 'bg-emerald-500' },
-    datetime: 'May 22, 2025 • 02:30 PM',
-    type: 'Video Call',
-    status: 'Upcoming',
-  },
-  {
-    id: 3,
-    client: { name: 'Emily Davis', email: 'emily.davis@email.com', avatar: 'https://i.pravatar.cc/150?img=9' },
-    service: { name: 'Growth Strategy', color: 'bg-blue-500' },
-    datetime: 'May 23, 2025 • 11:00 AM',
-    type: 'Video Call',
-    status: 'Confirmed',
-  },
-  {
-    id: 4,
-    client: { name: 'Daniel Wilson', email: 'daniel.wilson@email.com', avatar: 'https://i.pravatar.cc/150?img=12' },
-    service: { name: 'Financial Planning', color: 'bg-orange-500' },
-    datetime: 'May 24, 2025 • 04:00 PM',
-    type: 'In-Person',
-    status: 'Confirmed',
-  },
-  {
-    id: 5,
-    client: { name: 'Olivia Martinez', email: 'olivia.martinez@email.com', avatar: 'https://i.pravatar.cc/150?img=10' },
-    service: { name: 'Brand Development', color: 'bg-rose-500' },
-    datetime: 'May 25, 2025 • 12:00 PM',
-    type: 'Video Call',
-    status: 'Pending',
-  }
-];
-
 export function RecentBookings() {
-  const [bookings, setBookings] = useState<any[]>(mockBookings);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
@@ -58,23 +15,27 @@ export function RecentBookings() {
       try {
         const response = await api.get('/consultant/recent-bookings?limit=5');
         const data = response.data?.data;
-        if (Array.isArray(data) && data.length > 0) {
-          const formatted = data.map((b: any) => {
-            const dateObj = new Date(b.scheduledAt);
-            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            
-            return {
-              id: b.consultationId || Math.random().toString(),
-              client: { 
-                name: b.clientName || 'Client', 
-                avatar: b.clientImage || '' 
-              },
-              datetime: `${formattedDate} • ${formattedTime}`,
-              status: b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : 'Pending'
-            };
-          });
-          setBookings(formatted.slice(0, 5));
+        if (Array.isArray(data)) {
+          if (data.length > 0) {
+            const formatted = data.map((b: any) => {
+              const dateObj = new Date(b.scheduledAt);
+              const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+              
+              return {
+                id: b.consultationId || Math.random().toString(),
+                client: { 
+                  name: b.clientName || 'Client', 
+                  avatar: b.clientImage || '' 
+                },
+                datetime: `${formattedDate} • ${formattedTime}`,
+                status: b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : 'Pending'
+              };
+            });
+            setBookings(formatted.slice(0, 5));
+          } else {
+            setBookings([]);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch recent bookings:", error);
@@ -127,7 +88,15 @@ export function RecentBookings() {
               </tr>
             ) : bookings.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-sm text-slate-500">No recent bookings.</td>
+                <td colSpan={4} className="px-6 py-12">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                      <Calendar className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">No Recent Bookings</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">There are currently no recent bookings to display.</p>
+                  </div>
+                </td>
               </tr>
             ) : bookings.map((booking, index) => {
               const avatarUrl = getImageUrl(booking.client.avatar);

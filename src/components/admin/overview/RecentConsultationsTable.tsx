@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { User, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 import api from '@/lib/axios';
 
 interface RecentConsultation {
@@ -32,6 +32,7 @@ function formatDateTime(isoString: string) {
 export function RecentConsultationsTable() {
   const [data, setData] = useState<RecentConsultation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchRecentConsultations = async () => {
@@ -79,8 +80,13 @@ export function RecentConsultationsTable() {
                 <tr key={item.consultationId || index} className="border-b border-slate-50 dark:border-slate-800/50 last:border-0 hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
                   <td className="py-3 px-2">
                     <div className="flex items-center gap-2">
-                      {item.patientImage ? (
-                        <img src={item.patientImage} alt={item.patientName || 'Patient'} className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                      {item.patientImage && !imageErrors[`patient_${item.consultationId || index}`] ? (
+                        <img 
+                          src={getImageUrl(item.patientImage)} 
+                          alt={item.patientName || 'Patient'} 
+                          className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
+                          onError={() => setImageErrors(prev => ({ ...prev, [`patient_${item.consultationId || index}`]: true }))}
+                        />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center border border-slate-200 dark:border-slate-700">
                           <User className="w-3.5 h-3.5" />
@@ -91,8 +97,13 @@ export function RecentConsultationsTable() {
                   </td>
                   <td className="py-3 px-2">
                     <div className="flex items-center gap-2">
-                      {item.consultantImage ? (
-                        <img src={item.consultantImage} alt={item.consultantName || 'Consultant'} className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                      {item.consultantImage && !imageErrors[`consultant_${item.consultationId || index}`] ? (
+                        <img 
+                          src={getImageUrl(item.consultantImage)} 
+                          alt={item.consultantName || 'Consultant'} 
+                          className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
+                          onError={() => setImageErrors(prev => ({ ...prev, [`consultant_${item.consultationId || index}`]: true }))}
+                        />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center border border-slate-200 dark:border-slate-700">
                           <User className="w-3.5 h-3.5" />

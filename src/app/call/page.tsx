@@ -29,6 +29,7 @@ function CallPageContent() {
     clientRole: string;
     clientImage: string | null;
     clientInitials: string;
+    ratePerMinute?: number;
   } | null>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +131,16 @@ function CallPageContent() {
 
         // Step 3: Fetch real consultation details (Notes, Client Name, Topic)
         try {
+          let consultantRate = 1.0;
+          try {
+            const profileRes = await api.get('/user/profile');
+            if (profileRes.data?.success && profileRes.data?.data?.perMinuteRate) {
+              consultantRate = Number(profileRes.data.data.perMinuteRate);
+            }
+          } catch (profileErr) {
+            console.warn("Failed to fetch profile for rate:", profileErr);
+          }
+
           const bookingsRes = await api.get('/consultation/my-bookings');
           const allBookings = bookingsRes.data?.data || bookingsRes.data;
           if (Array.isArray(allBookings)) {
@@ -139,6 +150,9 @@ function CallPageContent() {
               const clientImage = currentBooking.user?.image || currentBooking.user?.avatar || currentBooking.image || null;
               const initials = clientName.charAt(0).toUpperCase();
               
+              // If booking explicitly has a rate or price, prefer it. Otherwise, use profile rate.
+              const bookingRate = currentBooking.perMinuteRate || currentBooking.rate || currentBooking.price || consultantRate;
+              
               setConsultationDetails({
                 topic: (currentBooking.bookingType || "Consultation").toUpperCase() + " BOOKING",
                 context: currentBooking.notes ? `Consultation scheduled for ${currentBooking.bookingType} request.` : "Reviewing consultation details and client requirements.",
@@ -146,7 +160,8 @@ function CallPageContent() {
                 clientName: clientName,
                 clientRole: "Client",
                 clientImage: clientImage,
-                clientInitials: initials
+                clientInitials: initials,
+                ratePerMinute: bookingRate
               });
             }
           }

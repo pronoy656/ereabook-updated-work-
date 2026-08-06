@@ -31,17 +31,41 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/axios";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/utils";
+
+const getInitials = (name?: string) => {
+  if (!name) return 'C';
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
 
 export default function TopBar() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [isAvailable, setIsAvailable] = useState(user?.activeStatus ?? true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
 
   useEffect(() => {
     if (user && user.activeStatus !== undefined) {
       setIsAvailable(user.activeStatus);
     }
+    
+    // Fetch latest profile to get accurate activeStatus on refresh
+    const fetchStatus = async () => {
+      try {
+        const response = await api.get('/user/profile');
+        if (response.data.success && response.data.data) {
+          setProfileData(response.data.data);
+          if (response.data.data.activeStatus !== undefined) {
+            setIsAvailable(response.data.data.activeStatus);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch current status", err);
+      }
+    };
+    
+    fetchStatus();
   }, [user]);
 
   const updateStatus = async (newStatus: boolean) => {
@@ -144,13 +168,17 @@ export default function TopBar() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 pl-2 pr-1 py-1 hover:bg-slate-50 rounded-2xl transition-all outline-none border border-transparent hover:border-slate-100 group cursor-pointer lg:min-w-[180px]">
               <div className="hidden lg:block text-right">
-                <div className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">Dr. Sarah Smith</div>
-                <div className="text-[11px] text-slate-400 font-medium">sarah.s@fixpair.com</div>
+                <div className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{profileData?.name || user?.name || "Consultant"}</div>
+                <div className="text-[11px] text-slate-400 font-medium">{profileData?.email || user?.email || ""}</div>
               </div>
               <div className="relative">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-500/20">
-                  SS
-                </div>
+                {profileData?.image || user?.image ? (
+                  <img src={getImageUrl(profileData?.image || user?.image)} alt={profileData?.name || user?.name || "Avatar"} className="h-10 w-10 rounded-xl object-cover" />
+                ) : (
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-500/20">
+                    {getInitials(profileData?.name || user?.name)}
+                  </div>
+                )}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></div>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
@@ -162,12 +190,16 @@ export default function TopBar() {
               <div className="flex flex-col gap-1">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Information</p>
                 <div className="flex items-center gap-3 mt-1">
-                  <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 text-sm font-bold">
-                    SS
-                  </div>
+                  {profileData?.image || user?.image ? (
+                    <img src={getImageUrl(profileData?.image || user?.image)} alt={profileData?.name || user?.name || "Avatar"} className="h-10 w-10 rounded-lg object-cover" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 text-sm font-bold">
+                      {getInitials(profileData?.name || user?.name)}
+                    </div>
+                  )}
                   <div>
-                    <p className="text-sm font-bold text-slate-800">Dr. Sarah Smith</p>
-                    <p className="text-[11px] text-slate-400">Senior Consultant</p>
+                    <p className="text-sm font-bold text-slate-800">{profileData?.name || user?.name || "Consultant"}</p>
+                    <p className="text-[11px] text-slate-400 capitalize">{profileData?.role || user?.role || "Consultant"}</p>
                   </div>
                 </div>
               </div>

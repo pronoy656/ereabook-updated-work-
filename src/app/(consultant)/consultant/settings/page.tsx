@@ -5,6 +5,7 @@ import { Camera, Mail, Briefcase, CheckCircle2, Globe, Hash, Clock, Award, User,
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,6 +20,9 @@ export default function ConsultantSettings() {
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isForced = searchParams.get('forced') === 'true';
   
   const [formData, setFormData] = useState({
     name: "Expert Consultant",
@@ -78,6 +82,12 @@ export default function ConsultantSettings() {
   };
 
   const handleSave = async () => {
+    // Validation
+    if (!formData.name?.trim() || !formData.email?.trim() || !formData.consultancyType?.trim() || formData.perMinuteRate === "" || formData.perMinuteRate === null || formData.perMinuteRate === undefined) {
+      toast.error("Please fill out all required fields (Name, Email, Consultancy Type, Per Minute Rate)");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload: any = {};
@@ -123,7 +133,11 @@ export default function ConsultantSettings() {
         // Refetch profile to ensure state reflects exact backend values
         await fetchProfile();
         
-        setTimeout(() => setIsSaved(false), 3000);
+        if (isForced) {
+          router.push('/consultant/overview');
+        } else {
+          setTimeout(() => setIsSaved(false), 3000);
+        }
       } else {
         toast.error("Failed to update profile");
       }
@@ -204,7 +218,7 @@ export default function ConsultantSettings() {
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2.5">
-                <Label htmlFor="name" className="text-sm font-bold text-slate-700 ml-1">Full Name</Label>
+                <Label htmlFor="name" className="text-sm font-bold text-slate-700 ml-1">Full Name <span className="text-rose-500">*</span></Label>
                 <Input 
                   id="name" 
                   value={formData.name} 
@@ -213,7 +227,7 @@ export default function ConsultantSettings() {
                 />
               </div>
               <div className="space-y-2.5">
-                <Label htmlFor="email" className="text-sm font-bold text-slate-700 ml-1">Email Address</Label>
+                <Label htmlFor="email" className="text-sm font-bold text-slate-700 ml-1">Email Address <span className="text-rose-500">*</span></Label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                   <Input 
@@ -229,7 +243,7 @@ export default function ConsultantSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2.5">
-                <Label htmlFor="consultancyType" className="text-sm font-bold text-slate-700 ml-1">Consultancy Type</Label>
+                <Label htmlFor="consultancyType" className="text-sm font-bold text-slate-700 ml-1">Consultancy Type <span className="text-rose-500">*</span></Label>
                 <Select
                   value={formData.consultancyType}
                   onValueChange={(val) => setFormData((prev) => ({ ...prev, consultancyType: val }))}
@@ -262,7 +276,7 @@ export default function ConsultantSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2.5">
-                <Label htmlFor="perMinuteRate" className="text-sm font-bold text-slate-700 ml-1">Per Minute Rate ($)</Label>
+                <Label htmlFor="perMinuteRate" className="text-sm font-bold text-slate-700 ml-1">Per Minute Rate ($) <span className="text-rose-500">*</span></Label>
                 <div className="relative group">
                   <Clock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                   <Input 

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Loader2, User } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
+import { getImageUrl } from '@/lib/utils';
 
 interface TopConsultant {
   consultantId: string;
@@ -16,6 +17,7 @@ interface TopConsultant {
 export function TopConsultantsTable() {
   const [data, setData] = useState<TopConsultant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchTopConsultants = async () => {
@@ -62,8 +64,13 @@ export function TopConsultantsTable() {
                 <td className="py-3 text-sm font-semibold text-slate-500 dark:text-slate-400">{index + 1}</td>
                 <td className="py-3">
                   <div className="flex items-center gap-3">
-                    {consultant.image ? (
-                      <img src={consultant.image} alt={consultant.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                    {consultant.image && !imageErrors[consultant.consultantId || index] ? (
+                      <img 
+                        src={getImageUrl(consultant.image)} 
+                        alt={consultant.name} 
+                        className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
+                        onError={() => setImageErrors(prev => ({ ...prev, [consultant.consultantId || index]: true }))}
+                      />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
                         <User className="w-4 h-4" />

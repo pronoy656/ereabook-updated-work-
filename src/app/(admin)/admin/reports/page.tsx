@@ -5,7 +5,7 @@ import { Search, Eye, FileText, Download, ExternalLink, User, Calendar, Clock, L
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import {
@@ -49,6 +49,7 @@ export default function AdminReportsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         const fetchReports = async () => {
@@ -111,81 +112,94 @@ export default function AdminReportsPage() {
                     <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Try adjusting your search or check back later for new consultations.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    {filteredReports.map((report) => (
-                        <Card key={report._id} className="border border-slate-100 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-[#1e293b] hover:shadow-lg dark:hover:shadow-slate-800/50 transition-all group flex flex-col h-full">
-                            <CardContent className="p-5 flex flex-col h-full space-y-4">
-                                {/* Compact Header */}
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex -space-x-3">
-                                            <div className="h-10 w-10 rounded-xl border-2 border-white dark:border-[#1e293b] bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shadow-sm overflow-hidden ring-1 ring-slate-100 dark:ring-slate-800">
-                                                {report.user?.image ? <img src={report.user.image} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-blue-500 dark:text-blue-400" />}
+                <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col transition-colors relative">
+                    <div className="overflow-x-auto relative min-h-[200px]">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                                    <th className="py-4 px-4 xl:px-6 text-[13px] font-semibold text-slate-500 dark:text-slate-400">User</th>
+                                    <th className="py-4 px-4 xl:px-6 text-[13px] font-semibold text-slate-500 dark:text-slate-400">Consultant</th>
+                                    <th className="py-4 px-4 xl:px-6 text-[13px] font-semibold text-slate-500 dark:text-slate-400">Date</th>
+                                    <th className="py-4 px-4 xl:px-6 text-[13px] font-semibold text-slate-500 dark:text-slate-400">Links</th>
+                                    <th className="py-4 px-4 xl:px-6 text-[13px] font-semibold text-slate-500 dark:text-slate-400 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                                {filteredReports.map((report, index) => (
+                                    <tr key={report._id || index} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
+                                        <td className="py-4 px-4 xl:px-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+                                                    {report.user?.image && !imageErrors[`${report._id}_user`] ? <img src={getImageUrl(report.user!.image as string)} alt="" className="w-full h-full object-cover" onError={() => setImageErrors(prev => ({ ...prev, [`${report._id}_user`]: true }))} /> : <User className="w-4 h-4 text-blue-500 dark:text-blue-400" />}
+                                                </div>
+                                                <span className="text-[14px] font-bold text-slate-800 dark:text-slate-200">{report.user?.name || "Unknown User"}</span>
                                             </div>
-                                            <div className="h-10 w-10 rounded-xl border-2 border-white dark:border-[#1e293b] bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shadow-sm overflow-hidden relative z-10 ring-1 ring-slate-100 dark:ring-slate-800">
-                                                {report.consultant?.image ? <img src={report.consultant.image} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
+                                        </td>
+                                        <td className="py-4 px-4 xl:px-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shadow-sm overflow-hidden shrink-0">
+                                                    {report.consultant?.image && !imageErrors[`${report._id}_consultant`] ? <img src={getImageUrl(report.consultant!.image as string)} alt="" className="w-full h-full object-cover" onError={() => setImageErrors(prev => ({ ...prev, [`${report._id}_consultant`]: true }))} /> : <User className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
+                                                </div>
+                                                <span className="text-[14px] font-bold text-slate-800 dark:text-slate-200">{report.consultant?.name || "Unknown Consultant"}</span>
                                             </div>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate leading-tight">{report.user?.name || "Unknown User"}</p>
-                                            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate">w/ {report.consultant?.name || "Unknown Consultant"}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Meta Stats */}
-                                <div className="flex items-center gap-3 py-1">
-                                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[10px] font-semibold bg-slate-50 dark:bg-slate-800/50 px-2 py-1 rounded-md">
-                                        <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                                        {new Date(report.createdAt).toLocaleDateString()}
-                                    </div>
-                                </div>
-
-                                {/* Links Section */}
-                                {report.links && report.links.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 min-h-[26px]">
-                                        {report.links.slice(0, 2).map((link, idx) => (
-                                            <a 
-                                                key={idx} 
-                                                href={link.startsWith('http') ? link : `https://${link}`} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-md border border-slate-100 dark:border-slate-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all"
-                                            >
-                                                <ExternalLink className="w-2.5 h-2.5" />
-                                                L{idx + 1}
-                                            </a>
-                                        ))}
-                                        {report.links.length > 2 && (
-                                            <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 self-center">
-                                                +{report.links.length - 2}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className="mt-auto pt-4 flex items-center justify-end gap-2 border-t border-slate-50 dark:border-slate-800">
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        className="rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 h-8 px-2.5 text-[11px] font-bold transition-all"
-                                        onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${report.pdfUrl}`, '_blank')}
-                                    >
-                                        <Download className="w-3.5 h-3.5 mr-1" />
-                                        PDF
-                                    </Button>
-                                    <Button 
-                                        size="sm"
-                                        onClick={() => handleViewDetails(report)}
-                                        className="rounded-lg bg-blue-600 hover:bg-blue-500 text-white h-8 px-3 text-[11px] font-bold  shadow-sm"
-                                    >
-                                        Details
-                                        <Eye className="w-3.5 h-3.5 ml-1.5" />
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                        </td>
+                                        <td className="py-4 px-4 xl:px-6">
+                                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 text-[13px] font-medium">
+                                                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                                                {new Date(report.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-4 xl:px-6">
+                                            {report.links && report.links.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {report.links.slice(0, 2).map((link, idx) => (
+                                                        <a 
+                                                            key={idx} 
+                                                            href={link.startsWith('http') ? link : `https://${link}`} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-[#1e293b] text-slate-600 dark:text-slate-300 text-[11px] font-bold rounded-md border border-slate-200 dark:border-slate-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all shadow-sm"
+                                                        >
+                                                            <ExternalLink className="w-3 h-3" />
+                                                            L{idx + 1}
+                                                        </a>
+                                                    ))}
+                                                    {report.links.length > 2 && (
+                                                        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 self-center ml-1">
+                                                            +{report.links.length - 2}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-[13px] text-slate-400 dark:text-slate-600 italic">No links</span>
+                                            )}
+                                        </td>
+                                        <td className="py-4 px-4 xl:px-6 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    className="rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 h-8 px-3 text-[12px] font-bold transition-all"
+                                                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${report.pdfUrl}`, '_blank')}
+                                                >
+                                                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                                                    PDF
+                                                </Button>
+                                                <Button 
+                                                    size="sm"
+                                                    onClick={() => handleViewDetails(report)}
+                                                    className="rounded-lg bg-blue-600 hover:bg-blue-500 text-white h-8 px-3.5 text-[12px] font-bold shadow-sm"
+                                                >
+                                                    Details
+                                                    <Eye className="w-3.5 h-3.5 ml-1.5" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
@@ -209,7 +223,7 @@ export default function AdminReportsPage() {
                                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">User</p>
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-xl bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden shadow-sm">
-                                            {selectedReport.user?.image ? <img src={selectedReport.user.image} alt="" /> : <User className="w-5 h-5 text-slate-400 dark:text-slate-500" />}
+                                            {selectedReport.user?.image && !imageErrors[`${selectedReport._id}_user_modal`] ? <img src={getImageUrl(selectedReport.user.image)} alt="" className="w-full h-full object-cover" onError={() => setImageErrors(prev => ({ ...prev, [`${selectedReport._id}_user_modal`]: true }))} /> : <User className="w-5 h-5 text-slate-400 dark:text-slate-500" />}
                                         </div>
                                         <p className="text-sm font-bold text-slate-800 dark:text-white">{selectedReport.user?.name || "Unknown User"}</p>
                                     </div>
@@ -218,7 +232,7 @@ export default function AdminReportsPage() {
                                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Consultant</p>
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-xl bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-600 flex items-center justify-center overflow-hidden shadow-sm">
-                                            {selectedReport.consultant?.image ? <img src={selectedReport.consultant.image} alt="" /> : <User className="w-5 h-5 text-slate-400 dark:text-slate-500" />}
+                                            {selectedReport.consultant?.image && !imageErrors[`${selectedReport._id}_consultant_modal`] ? <img src={getImageUrl(selectedReport.consultant.image)} alt="" className="w-full h-full object-cover" onError={() => setImageErrors(prev => ({ ...prev, [`${selectedReport._id}_consultant_modal`]: true }))} /> : <User className="w-5 h-5 text-slate-400 dark:text-slate-500" />}
                                         </div>
                                         <p className="text-sm font-bold text-slate-800 dark:text-white">{selectedReport.consultant?.name || "Unknown Consultant"}</p>
                                     </div>

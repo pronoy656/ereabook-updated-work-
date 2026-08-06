@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,6 +15,13 @@ import {
   Wallet,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/axios";
+import { getImageUrl } from "@/lib/utils";
+
+const getInitials = (name?: string) => {
+  if (!name) return 'C';
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
 
 const items = [
   {
@@ -23,7 +30,7 @@ const items = [
       { href: "/consultant/availability", label: "Unavailability", Icon: Clock },
       { href: "/consultant/requests", label: "Requests", Icon: ClipboardList },
       { href: "/consultant/reports", label: "Reports", Icon: FileText },
-      { href: "/consultant/earnings", label: "Earnings", Icon: Wallet },
+      // { href: "/consultant/earnings", label: "Earnings", Icon: Wallet },
     ]
   },
   {
@@ -36,8 +43,25 @@ const items = [
 export default function Sidebar({ active }: { active?: string }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const current = active ?? pathname ?? "";
+  const [profileData, setProfileData] = useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get('/user/profile');
+        if (response.data.success && response.data.data) {
+          setProfileData(response.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile in sidebar", err);
+      }
+    };
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
 
   return (
     <aside className="h-screen w-64 bg-white text-slate-600 border-r border-slate-100 fixed left-0 top-0 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300">
@@ -91,12 +115,16 @@ export default function Sidebar({ active }: { active?: string }) {
       <div className="p-4 mt-auto border-t border-slate-100">
         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-[24px] group border border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-600/20">
-              SS
-            </div>
+            {profileData?.image || user?.image ? (
+              <img src={getImageUrl(profileData?.image || user?.image)} alt={profileData?.name || user?.name || "Avatar"} className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-emerald-600/20" />
+            ) : (
+              <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-600/20">
+                {getInitials(profileData?.name || user?.name)}
+              </div>
+            )}
             <div>
-              <p className="text-sm font-bold text-slate-800 truncate max-w-[100px]">Dr. Sarah Smith</p>
-              <p className="text-[11px] text-slate-400">Consultant</p>
+              <p className="text-sm font-bold text-slate-800 truncate max-w-[100px]">{profileData?.name || user?.name || "Consultant"}</p>
+              <p className="text-[11px] text-slate-400 capitalize">{profileData?.role || user?.role || "Consultant"}</p>
             </div>
           </div>
           <button onClick={() => logout()} className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all duration-200 group/logout">
