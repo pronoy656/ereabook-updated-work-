@@ -78,17 +78,16 @@ export function RecentBookings() {
               <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">Client</th>
               <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">Date & Time</th>
               <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">Status</th>
-              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-sm text-slate-500">Loading bookings...</td>
+                <td colSpan={3} className="px-6 py-8 text-center text-sm text-slate-500">Loading bookings...</td>
               </tr>
             ) : bookings.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12">
+                <td colSpan={3} className="px-6 py-12">
                   <div className="flex flex-col items-center justify-center text-center">
                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
                       <Calendar className="w-8 h-8 text-slate-400 dark:text-slate-500" />
@@ -131,16 +130,6 @@ export function RecentBookings() {
                   <span className={`px-2.5 py-1 rounded-full text-[11px] xl:text-[12px] font-bold border ${getStatusBadge(booking.status)}`}>
                     {booking.status}
                   </span>
-                </td>
-                <td className="px-4 xl:px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors">
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 rounded-md bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 flex items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
                 </td>
                 </tr>
               );

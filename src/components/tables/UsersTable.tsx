@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Eye, Trash2, Plus, AlertCircle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Eye, Trash2, Plus, AlertCircle, Loader2, Edit, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -31,6 +32,7 @@ interface PaginationData {
 }
 
 export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
+  const router = useRouter();
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,9 +54,11 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   // Signup & OTP State
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isOtpOpen, setIsOtpOpen] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -71,7 +75,12 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
     subSpeciality: "",
     experience: "",
     bio: "",
+    consultancyType: "",
+    perMinuteRate: "",
   });
+  
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const fetchUsers = async () => {
     try {
@@ -120,12 +129,29 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
     e.preventDefault();
     try {
       setIsSigningUp(true);
-      const response = await api.post("/user", {
+      const payload: any = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role,
-        // Backend might support more fields, but user only provided these 4
+        phoneNumber: formData.phoneNumber,
+        professionalDetails: formData.professionalDetails,
+        specialization: formData.specialization,
+        subSpeciality: formData.subSpeciality,
+        experience: formData.experience,
+        bio: formData.bio,
+        consultancyType: formData.consultancyType,
+        perMinuteRate: formData.perMinuteRate ? Number(formData.perMinuteRate) : undefined,
+      };
+
+      const formDataObj = new FormData();
+      formDataObj.append('data', JSON.stringify(payload));
+      if (selectedFile) {
+        formDataObj.append('image', selectedFile);
+      }
+
+      const response = await api.post("/user", formDataObj, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (response.data.success) {
@@ -137,6 +163,50 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
       toast.error(error.response?.data?.message || "Failed to sign up consultant");
     } finally {
       setIsSigningUp(false);
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    try {
+      setIsUpdating(true);
+      const payload: any = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        phoneNumber: formData.phoneNumber,
+        professionalDetails: formData.professionalDetails,
+        specialization: formData.specialization,
+        subSpeciality: formData.subSpeciality,
+        experience: formData.experience,
+        bio: formData.bio,
+        consultancyType: formData.consultancyType,
+        perMinuteRate: formData.perMinuteRate ? Number(formData.perMinuteRate) : undefined,
+      };
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
+      const formDataObj = new FormData();
+      formDataObj.append('data', JSON.stringify(payload));
+      if (selectedFile) {
+        formDataObj.append('image', selectedFile);
+      }
+
+      const response = await api.patch(`/user/${selectedUser._id}`, formDataObj, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data.success) {
+        toast.success("User updated successfully");
+        setIsEditOpen(false);
+        fetchUsers();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update user");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -281,10 +351,18 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700">Profile Picture</label>
                 <div className="flex items-center gap-4">
-                   <div className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400">
-                     <Plus className="w-6 h-6" />
+                   <div 
+                     className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 overflow-hidden cursor-pointer"
+                     onClick={() => fileInputRef.current?.click()}
+                   >
+                     {selectedFile ? (
+                       <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="w-full h-full object-cover" />
+                     ) : (
+                       <Plus className="w-6 h-6" />
+                     )}
                    </div>
-                   <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700">Upload Image</button>
+                   <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>Upload Image</button>
+                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -364,6 +442,32 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     className="bg-slate-50" 
                     value={formData.experience}
                     onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700">Consultancy Type <span className="text-red-500">*</span></label>
+                  <select 
+                    className="w-full h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    required
+                    value={formData.consultancyType}
+                    onChange={(e) => setFormData({ ...formData, consultancyType: e.target.value })}
+                  >
+                    <option value="">Select type...</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="lawyer">Lawyer</option>
+                    <option value="advisor">Advisor</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700">Per Minute Rate ($) <span className="text-red-500">*</span></label>
+                  <Input 
+                    placeholder="10" 
+                    type="number"
+                    step="0.01"
+                    className="bg-slate-50" 
+                    required
+                    value={formData.perMinuteRate}
+                    onChange={(e) => setFormData({ ...formData, perMinuteRate: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1">
@@ -564,7 +668,36 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                         <button
                           onClick={() => {
                             setSelectedUser(user);
-                            setIsViewOpen(true);
+                            setFormData({
+                              name: user.name || "",
+                              email: user.email || "",
+                              password: "",
+                              role: user.role || "CONSULTANT",
+                              phoneNumber: (user as any).phoneNumber || "",
+                              professionalDetails: (user as any).professionalDetails || "",
+                              specialization: (user as any).specialization || "",
+                              subSpeciality: (user as any).subSpeciality || "",
+                              experience: (user as any).experience?.toString() || "",
+                              bio: (user as any).bio || "",
+                              consultancyType: (user as any).consultancyType || "",
+                              perMinuteRate: (user as any).perMinuteRate?.toString() || "",
+                            });
+                            setSelectedFile(null);
+                            setIsEditOpen(true);
+                          }}
+                          className="p-1 hover:bg-emerald-50 rounded-md hover:text-emerald-500 transition-colors"
+                          aria-label="Edit User"
+                        >
+                          <Pencil className="w-4 h-4 text-emerald-500" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (role === 'CONSULTANT') {
+                              router.push(`/admin/users/consultants/${user._id}`);
+                            } else {
+                              setSelectedUser(user);
+                              setIsViewOpen(true);
+                            }
                           }}
                           className="p-1 hover:bg-blue-50 rounded-md hover:text-blue-500 transition-colors"
                           aria-label="View User"
@@ -636,6 +769,183 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
       </div>
 
       {/* --- Action Dialogs --- */}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto dark:bg-[#1e293b] dark:text-white border-none">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Edit {role === "USER" ? "Customer" : "Consultant"}</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">Update user details below.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">Profile Picture</label>
+              <div className="flex items-center gap-4">
+                 <div 
+                   className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 overflow-hidden cursor-pointer"
+                   onClick={() => fileInputRef.current?.click()}
+                 >
+                   {selectedFile ? (
+                     <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="w-full h-full object-cover" />
+                   ) : selectedUser?.image ? (
+                     <img src={getImageUrl(selectedUser.image) || selectedUser.image} alt="Profile" className="w-full h-full object-cover" />
+                   ) : (
+                     <Plus className="w-6 h-6" />
+                   )}
+                 </div>
+                 <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>Change Image</button>
+                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Full Name <span className="text-red-500">*</span></label>
+                <Input 
+                  placeholder="John Doe" 
+                  className="bg-slate-50" 
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Email Address <span className="text-red-500">*</span></label>
+                <Input 
+                  placeholder="john@example.com" 
+                  type="email" 
+                  className="bg-slate-50" 
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Password</label>
+                <Input 
+                  placeholder="Leave blank to keep same" 
+                  type="password" 
+                  className="bg-slate-50"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Phone Number</label>
+                <Input 
+                  placeholder="+1 (555) 000-0000" 
+                  className="bg-slate-50" 
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                />
+              </div>
+              {role === "CONSULTANT" && (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Professional Details</label>
+                    <Input 
+                      placeholder="E.g. Certified Accountant" 
+                      className="bg-slate-50" 
+                      value={formData.professionalDetails}
+                      onChange={(e) => setFormData({ ...formData, professionalDetails: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Specialization</label>
+                    <Input 
+                      placeholder="Tax Consulting" 
+                      className="bg-slate-50" 
+                      value={formData.specialization}
+                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Sub-speciality</label>
+                    <Input 
+                      placeholder="Corporate Tax" 
+                      className="bg-slate-50" 
+                      value={formData.subSpeciality}
+                      onChange={(e) => setFormData({ ...formData, subSpeciality: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Years of Experience</label>
+                    <Input 
+                      placeholder="10" 
+                      type="number" 
+                      className="bg-slate-50" 
+                      value={formData.experience}
+                      onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Consultancy Type <span className="text-red-500">*</span></label>
+                    <select 
+                      className="w-full h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      required
+                      value={formData.consultancyType}
+                      onChange={(e) => setFormData({ ...formData, consultancyType: e.target.value })}
+                    >
+                      <option value="">Select type...</option>
+                      <option value="doctor">Doctor</option>
+                      <option value="lawyer">Lawyer</option>
+                      <option value="advisor">Advisor</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Per Minute Rate ($) <span className="text-red-500">*</span></label>
+                    <Input 
+                      placeholder="10" 
+                      type="number"
+                      step="0.01"
+                      className="bg-slate-50" 
+                      required
+                      value={formData.perMinuteRate}
+                      onChange={(e) => setFormData({ ...formData, perMinuteRate: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Role</label>
+                <Input value={role} readOnly className="bg-slate-100 cursor-not-allowed font-bold text-slate-500" />
+              </div>
+            </div>
+            <div className="space-y-1 pt-2">
+              <label className="text-sm font-semibold text-slate-700">Bio/About</label>
+              <textarea 
+                className="w-full h-24 p-3 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                placeholder="Brief description about the user..."
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              />
+            </div>
+
+            <div className="pt-4 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => setIsEditOpen(false)}
+                className="px-4 py-2 font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={isUpdating}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 flex items-center gap-2"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>

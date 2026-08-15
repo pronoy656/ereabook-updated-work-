@@ -25,6 +25,7 @@ function CreateReportContent() {
     const [newLink, setNewLink] = useState("");
     const [consultationId, setConsultationId] = useState(initialConsultationId);
     const [conversation, setConversation] = useState("");
+    const [reportSummary, setReportSummary] = useState("");
     const [sending, setSending] = useState(false);
     const [fetchingTranscript, setFetchingTranscript] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +113,7 @@ function CreateReportContent() {
             const formData = new FormData();
             formData.append("consultationId", consultationId);
             formData.append("conversation", conversation);
+            formData.append("reportSummary", reportSummary);
             
             links.forEach(link => {
                 formData.append("links", link);
@@ -196,14 +198,31 @@ function CreateReportContent() {
                     {/* Main Editor and Sidebar */}
                     <div className="flex flex-col lg:flex-row min-h-[500px]">
                         {/* Editor Section */}
-                        <div className="flex-1 p-6 md:p-8 space-y-4">
-                             <Label className="text-lg font-bold text-slate-900">Conversation / Summary</Label>
-                             <Textarea 
-                                className="min-h-[400px] text-base border border-slate-200 rounded-2xl p-4 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-slate-50"
-                                placeholder="user: Hello, sir!&#10;consultant: how can i help you.&#10;user: i feel headache.&#10;consultant: taka napa 2X time"
-                                value={conversation}
-                                onChange={(e) => setConversation(e.target.value)}
-                            />
+                         <div className="flex-1 p-6 md:p-8 space-y-6">
+                             <div className="space-y-3">
+                                 <Label className="text-lg font-bold text-slate-900 flex items-center justify-between">
+                                     <span>Conversation Transcript</span>
+                                     {fetchingTranscript && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+                                 </Label>
+                                 <Textarea 
+                                    className="min-h-[200px] text-base border border-slate-200 rounded-2xl p-4 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-slate-50"
+                                    placeholder="user: Hello, sir!&#10;consultant: how can i help you.&#10;user: i feel headache.&#10;consultant: taka napa 2X time"
+                                    value={conversation}
+                                    onChange={(e) => setConversation(e.target.value)}
+                                />
+                             </div>
+                             
+                             <div className="space-y-3 flex-1 flex flex-col">
+                                <Label className="text-lg font-bold text-slate-900">
+                                    Report Summary <span className="text-red-500">*</span>
+                                </Label>
+                                <Textarea 
+                                    className="flex-1 min-h-[250px] text-base border-slate-200 rounded-xl p-5 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-white shadow-sm"
+                                    placeholder="Write your detailed consultation report summary here..."
+                                    value={reportSummary}
+                                    onChange={(e) => setReportSummary(e.target.value)}
+                                />
+                             </div>
                         </div>
 
                         {/* Sidebar Section */}

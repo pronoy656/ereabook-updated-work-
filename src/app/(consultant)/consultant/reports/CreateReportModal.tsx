@@ -174,9 +174,12 @@ export function CreateReportModal({ open, onOpenChange, consultationId: initialI
                                     <span>Conversation Transcript</span>
                                     {fetchingTranscript && <Loader2 className="h-3 w-3 animate-spin text-blue-500" />}
                                 </Label>
-                                <div className="h-[160px] w-full overflow-y-auto text-sm border border-slate-200 rounded-xl p-4 bg-slate-50/50 text-slate-700 whitespace-pre-wrap leading-relaxed shadow-inner custom-scrollbar">
-                                    {conversation || (fetchingTranscript ? <span className="text-slate-400 italic">Fetching...</span> : <span className="text-slate-400 italic">No transcript available.</span>)}
-                                </div>
+                                <Textarea
+                                    className="h-[160px] w-full text-sm border-slate-200 rounded-xl p-4 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-white shadow-sm custom-scrollbar"
+                                    placeholder={fetchingTranscript ? "Fetching transcript..." : "Write or edit the conversation transcript here..."}
+                                    value={conversation}
+                                    onChange={(e) => setConversation(e.target.value)}
+                                />
                             </div>
                             
                             <div className="space-y-3 flex-1 flex flex-col">

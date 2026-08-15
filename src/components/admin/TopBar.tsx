@@ -37,20 +37,6 @@ export default function TopBar() {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Search */}
-        <Button variant="outline" size="icon" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors hidden sm:flex">
-          <Search className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-        </Button>
-        
-        {/* Notifications */}
-        <div className="relative hidden sm:block">
-          <Button variant="outline" size="icon" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-            <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-          </Button>
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900 transition-colors">
-            8
-          </span>
-        </div>
 
         {/* Theme Toggle */}
         <Button 
@@ -108,13 +94,6 @@ export default function TopBar() {
               >
                 <User className="w-4 h-4 text-slate-400 dark:text-slate-500 group-focus:text-blue-600 dark:group-focus:text-blue-400" />
                 <span className="font-medium dark:text-slate-300 group-focus:dark:text-blue-400">My Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => router.push('/admin/settings')}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-blue-50 dark:focus:bg-blue-900/30 focus:text-blue-600 dark:focus:text-blue-400 group transition-all"
-              >
-                <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500 group-focus:text-blue-600 dark:group-focus:text-blue-400" />
-                <span className="font-medium dark:text-slate-300 group-focus:dark:text-blue-400">Account Settings</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 

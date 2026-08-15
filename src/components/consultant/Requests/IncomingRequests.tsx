@@ -24,48 +24,18 @@ interface RequestData {
 
 // Helper Component to handle independent Live Countdowns and State Transitions for accepted requests
 const AcceptedActionState = ({ req }: { req: RequestData }) => {
-  const [now, setNow] = useState(Date.now());
   const router = useRouter();
 
-  useEffect(() => {
-    // Only schedule interval logic if it's a future scheduled event
-    if (req.tabType !== "Schedule" || !req.scheduledAt || req.scheduledAt <= now) return;
-
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 1000); // Evaluate every second to handle the UI transition smoothly
-
-    return () => clearInterval(interval);
-  }, [req, now]);
-
-  // If it's a schedule and the time hasn't arrived
-  if (req.tabType === "Schedule" && req.scheduledAt && req.scheduledAt > now) {
-    const diffMs = req.scheduledAt - now;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-
-    let displayMsg = "";
-    if (diffDay > 0) {
-      displayMsg = `Join in ${diffDay} day${diffDay > 1 ? 's' : ''}`;
-    } else if (diffHour > 0) {
-      displayMsg = `Join in ${diffHour} hour${diffHour > 1 ? 's' : ''}`;
-    } else if (diffMin > 0) {
-      displayMsg = `Join in ${diffMin} min${diffMin > 1 ? 's' : ''}`;
-    } else {
-      displayMsg = `Join in ${diffSec} sec${diffSec !== 1 ? 's' : ''}`;
+  const handleJoinCall = () => {
+    if (req.tabType === "Schedule" && req.scheduledAt && !isNaN(req.scheduledAt)) {
+      const diffMs = req.scheduledAt - Date.now();
+      if (diffMs > 5 * 60 * 1000) {
+        toast.error("You can only join the call 5 minutes before the scheduled time.");
+        return;
+      }
     }
-
-    return (
-      <button
-        disabled
-        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-500 px-8 py-2.5 rounded-xl text-sm font-bold opacity-80 cursor-not-allowed animate-in zoom-in duration-300"
-      >
-        <Clock className="w-4 h-4" /> {displayMsg}
-      </button>
-    );
-  }
+    router.push(`/call?consultationId=${req.id}`);
+  };
 
   // If it's an Instant request and we're joining via popup, hide the manual Join Call button
   if (req.tabType === "Instant") {
@@ -79,7 +49,7 @@ const AcceptedActionState = ({ req }: { req: RequestData }) => {
   // Once the time arrives (or if it's a Callback default)
   return (
     <button
-      onClick={() => router.push(`/call?consultationId=${req.id}`)}
+      onClick={handleJoinCall}
       className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 animate-in zoom-in duration-300"
     >
       {req.tabType === "Callback" ? <PhoneCall className="w-4 h-4" /> : <Video className="w-4 h-4" />} 
@@ -113,14 +83,16 @@ export default function IncomingRequests() {
             r.status?.toLowerCase() !== "accepted" && 
             r.status?.toLowerCase() !== "confirmed" && 
             r.status?.toLowerCase() !== "completed" && 
-            r.status?.toLowerCase() !== "rejected"
+            r.status?.toLowerCase() !== "rejected" &&
+            r.status?.toLowerCase() !== "cancelled"
           ).length,
           Callback: allData.filter((r: any) => 
             r.bookingType?.toLowerCase() === "callback" && 
             r.status?.toLowerCase() !== "accepted" && 
             r.status?.toLowerCase() !== "confirmed" && 
             r.status?.toLowerCase() !== "completed" && 
-            r.status?.toLowerCase() !== "rejected"
+            r.status?.toLowerCase() !== "rejected" &&
+            r.status?.toLowerCase() !== "cancelled"
           ).length,
         };
         setCounts(newCounts);
@@ -136,7 +108,10 @@ export default function IncomingRequests() {
         
         const mappedData = allData
           .filter((item: any) => 
-            currentTabTypes.includes(item.bookingType?.toLowerCase())
+            currentTabTypes.includes(item.bookingType?.toLowerCase()) &&
+            item.status?.toLowerCase() !== "completed" && 
+            item.status?.toLowerCase() !== "rejected" &&
+            item.status?.toLowerCase() !== "cancelled"
           )
           .map((item: any) => {
             let timeDisplay = "Instant";
@@ -146,7 +121,18 @@ export default function IncomingRequests() {
               timeDisplay = `${item.startTime} - ${item.endTime}, ${format(new Date(item.date), 'MMM dd, yyyy')}`;
               if (item.date && item.startTime) {
                 const datePart = item.date.split('T')[0];
-                scheduledAt = new Date(`${datePart}T${item.startTime}:00`).getTime();
+                const timeMatch = item.startTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if (timeMatch) {
+                  let hours = parseInt(timeMatch[1], 10);
+                  const mins = timeMatch[2];
+                  const ampm = timeMatch[3]?.toUpperCase();
+                  if (ampm === 'PM' && hours < 12) hours += 12;
+                  if (ampm === 'AM' && hours === 12) hours = 0;
+                  const paddedHours = hours.toString().padStart(2, '0');
+                  scheduledAt = new Date(`${datePart}T${paddedHours}:${mins}:00`).getTime();
+                } else {
+                  scheduledAt = new Date(`${datePart}T${item.startTime}:00`).getTime();
+                }
               }
             } else if (item.bookingType?.toLowerCase() === "callback") {
               timeDisplay = item.preferredWindow || "Today";

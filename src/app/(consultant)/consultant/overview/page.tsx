@@ -6,6 +6,7 @@ import { ConsultationOverviewChart } from '@/components/consultant/Overview/Cons
 import { MyRatingCard } from '@/components/consultant/Overview/MyRatingCard';
 import { RecentBookings } from '@/components/consultant/Overview/RecentBookings';
 import RecentFeedback from '@/components/consultant/Overview/RecentFeedback';
+import { UpcomingScheduledBookings } from '@/components/consultant/Overview/UpcomingScheduledBookings';
 import { Calendar as CalendarIcon, CheckCircle2, Video, Clock } from 'lucide-react';
 
 export default function ConsultantOverviewPage() {
@@ -95,7 +96,12 @@ export default function ConsultantOverviewPage() {
           </div>
         </div>
 
-        {/* Row 3: Recent Bookings and Feedback */}
+        {/* Row 3: Upcoming Scheduled Bookings */}
+        <div className="grid grid-cols-1 gap-6 w-full items-stretch">
+          <UpcomingScheduledBookings />
+        </div>
+
+        {/* Row 4: Recent Bookings and Feedback */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full items-stretch">
           <RecentBookings />
           <RecentFeedback />

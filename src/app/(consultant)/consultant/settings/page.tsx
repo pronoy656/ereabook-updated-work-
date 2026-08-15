@@ -83,8 +83,8 @@ export default function ConsultantSettings() {
 
   const handleSave = async () => {
     // Validation
-    if (!formData.name?.trim() || !formData.email?.trim() || !formData.consultancyType?.trim() || formData.perMinuteRate === "" || formData.perMinuteRate === null || formData.perMinuteRate === undefined) {
-      toast.error("Please fill out all required fields (Name, Email, Consultancy Type, Per Minute Rate)");
+    if (!formData.name?.trim() || !formData.email?.trim()) {
+      toast.error("Please fill out all required fields (Name, Email)");
       return;
     }
 
@@ -94,15 +94,8 @@ export default function ConsultantSettings() {
 
       if (formData.name) payload.name = formData.name;
       if (formData.email) payload.email = formData.email;
-      if (formData.consultancyType) payload.consultancyType = formData.consultancyType;
       if (formData.experience) payload.experience = String(formData.experience);
       if (formData.bio) payload.bio = formData.bio;
-      
-      // Allow 0 to be sent, fix TS comparison error
-      const rate = Number(formData.perMinuteRate);
-      if (!isNaN(rate)) {
-        payload.perMinuteRate = rate;
-      }
 
       if (formData.languages) {
         const langs = formData.languages.split(',').map(s => s.trim()).filter(Boolean);
@@ -243,22 +236,6 @@ export default function ConsultantSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2.5">
-                <Label htmlFor="consultancyType" className="text-sm font-bold text-slate-700 ml-1">Consultancy Type <span className="text-rose-500">*</span></Label>
-                <Select
-                  value={formData.consultancyType}
-                  onValueChange={(val) => setFormData((prev) => ({ ...prev, consultancyType: val }))}
-                >
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold text-slate-800 shadow-sm">
-                    <SelectValue placeholder="Select type..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                    <SelectItem value="doctor" className="font-medium cursor-pointer focus:bg-blue-50 focus:text-blue-700 rounded-lg m-1">Doctor</SelectItem>
-                    <SelectItem value="lawyer" className="font-medium cursor-pointer focus:bg-blue-50 focus:text-blue-700 rounded-lg m-1">Lawyer</SelectItem>
-                    <SelectItem value="advisor" className="font-medium cursor-pointer focus:bg-blue-50 focus:text-blue-700 rounded-lg m-1">Advisor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2.5">
                 <Label htmlFor="experience" className="text-sm font-bold text-slate-700 ml-1">Experience (Years)</Label>
                 <div className="relative group">
                   <Award className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
@@ -269,24 +246,6 @@ export default function ConsultantSettings() {
                     onChange={handleInputChange} 
                     placeholder="Enter your experience (e.g. 5 Years)" 
                     className="h-12 pl-12 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold text-slate-800 shadow-sm" 
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2.5">
-                <Label htmlFor="perMinuteRate" className="text-sm font-bold text-slate-700 ml-1">Per Minute Rate ($) <span className="text-rose-500">*</span></Label>
-                <div className="relative group">
-                  <Clock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                  <Input 
-                    id="perMinuteRate" 
-                    type="number" 
-                    step="0.01" 
-                    value={formData.perMinuteRate} 
-                    onChange={handleInputChange} 
-                    placeholder="Enter your rate (e.g. 10)" 
-                    className="h-12 pl-12 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-semibold text-slate-800 shadow-sm" 
                   />
                 </div>
               </div>
@@ -345,7 +304,7 @@ export default function ConsultantSettings() {
               )}
             </div>
             <div className="flex gap-4">
-              <Button variant="ghost" className="px-6 h-12 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-bold transition-all">
+              <Button variant="ghost" className="px-6 h-12 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-bold transition-all" onClick={() => fetchProfile()}>
                 Cancel
               </Button>
               <Button 

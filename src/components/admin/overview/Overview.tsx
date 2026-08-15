@@ -10,6 +10,8 @@ import { ConsultationStatusChart } from "./charts/ConsultationStatusChart";
 import { TopConsultantsTable } from "./TopConsultantsTable";
 import { RecentActivityList } from "./RecentActivityList";
 import { RecentConsultationsTable } from "./RecentConsultationsTable";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 
 interface Metric {
   value: number;
@@ -30,11 +32,15 @@ interface SummaryData {
 export default function Overview() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState("This Month");
 
   const fetchSummary = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/dashboard-summary");
+      
+      const queryParams = `?filter=${dateFilter.toLowerCase().replace(" ", "_")}`;
+
+      const response = await api.get(`/admin/dashboard-summary${queryParams}`);
       if (response.data.success) {
         setData(response.data.data);
       }
@@ -47,12 +53,32 @@ export default function Overview() {
 
   useEffect(() => {
     fetchSummary();
-  }, []);
+  }, [dateFilter]);
 
   // Use API data directly
   return (
     <div className="w-full mx-auto pb-10 bg-[#FAFAFA] dark:bg-[#0f172a] min-h-screen transition-colors">
-      <AdminHeader />
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <AdminHeader />
+        
+        <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors shadow-sm">
+                <CalendarIcon className="w-4 h-4 text-slate-500" />
+                {dateFilter}
+                <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px]">
+              <DropdownMenuItem onClick={() => setDateFilter("Today")}>Today</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("This Week")}>This Week</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("This Month")}>This Month</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("All Time")}>All Time</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <div className="flex flex-col xl:flex-row gap-6 w-full items-start">
         {/* Main Left Content */}
