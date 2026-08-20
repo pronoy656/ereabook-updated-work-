@@ -4,10 +4,10 @@ import { Rocket, ArrowRight, Play, CheckCircle2, Search, Scale, Briefcase, Heart
 export default function CtaSection() {
   return (
     <section className="relative w-full bg-white py-12 lg:py-16 z-10 overflow-hidden">
-      <div className="max-w-[1300px] mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
 
         {/* Main CTA Card */}
-        <div className="w-full bg-gradient-to-br from-[#F4F8FF] to-[#E8F2FF] rounded-[2rem] p-8 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8 overflow-hidden relative border border-blue-50 shadow-sm">
+        <div className="w-full bg-[#F8FAFC] rounded-[2.5rem] p-8 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8 overflow-hidden relative border border-slate-200/80 shadow-sm">
 
           {/* Left Content */}
           <div className="flex-1 w-full max-w-[540px] flex flex-col items-center lg:items-start text-center lg:text-left z-10">

@@ -38,7 +38,7 @@ export default function FaqSection() {
 
   return (
     <section className="relative w-full bg-white py-24 z-10 overflow-hidden">
-      <div className="max-w-[1100px] mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
         
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-16">

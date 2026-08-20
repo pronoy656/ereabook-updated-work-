@@ -1,79 +1,91 @@
 'use client';
 import React, { useState } from 'react';
-import { Tag, Send, Crown, Briefcase, CheckCircle2, ShieldCheck, Clock, Award, Headphones } from 'lucide-react';
+import { Tag, Send, Crown, Briefcase, CheckCircle2, ShieldCheck, Clock, Award, Headphones, Sparkles, ArrowRight } from 'lucide-react';
 
 export default function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
 
   return (
-    <section className="relative w-full bg-[#FAFCFF] py-24 z-10 overflow-hidden">
-      <div className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+    <section className="relative w-full bg-white py-20 lg:py-28 z-10 overflow-hidden">
+      <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
         
         {/* Header */}
-        <div className="flex flex-col items-center text-center mb-16">
-          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold tracking-wider uppercase mb-6 border border-blue-100">
+        <div className="flex flex-col items-center text-center mb-14">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold tracking-wider uppercase mb-5 shadow-sm">
             <Tag className="w-3.5 h-3.5" />
             SIMPLE, TRANSPARENT PRICING
           </div>
-          <h2 className="text-4xl lg:text-[2.75rem] font-bold text-[#0B1B3D] tracking-tight mb-4">
-            Choose the Plan That's Right for You
+          
+          <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4 leading-tight">
+            Choose the Plan That's <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">Right for You</span>
           </h2>
-          <p className="text-[15px] text-slate-500 font-medium">
-            Flexible plans for individuals and businesses.<br className="hidden sm:block" />
-            Start free and upgrade anytime.
+          
+          <p className="text-base text-slate-600 font-medium max-w-lg leading-relaxed">
+            Flexible plans for individuals and businesses. Start free and upgrade anytime as you grow.
           </p>
         </div>
 
-        {/* Toggle */}
+        {/* Toggle Switch */}
         <div className="flex justify-center items-center mb-16 relative">
-          <div className="bg-slate-100 p-1 rounded-full flex items-center shadow-inner relative z-10">
+          <div className="bg-white/80 backdrop-blur-md p-1.5 rounded-full flex items-center border border-slate-200/80 shadow-[0_4px_20px_rgba(15,23,42,0.04)] relative z-10">
             <button
               onClick={() => setIsYearly(false)}
-              className={`px-6 py-2.5 rounded-full text-[14px] font-bold transition-all duration-300 ${
-                !isYearly ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
+              className={`px-7 py-2.5 rounded-full text-xs font-bold transition-all duration-300 cursor-pointer ${
+                !isYearly 
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' 
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setIsYearly(true)}
-              className={`px-6 py-2.5 rounded-full text-[14px] font-bold transition-all duration-300 ${
-                isYearly ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
+              className={`px-7 py-2.5 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                isYearly 
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' 
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Yearly (Save 20%)
+              <span>Yearly</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                isYearly ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/80'
+              }`}>
+                Save 20%
+              </span>
             </button>
+          </div>
 
-            {/* Decorative Arrow */}
-            <div className="absolute left-[105%] top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 text-blue-600 pointer-events-none whitespace-nowrap">
-              <svg width="32" height="20" viewBox="0 0 40 24" fill="none" className="rotate-[15deg] shrink-0 mt-2">
-                <path d="M1 1C7.66667 18.3333 24.6 27.2 38 10M38 10L27 9M38 10L36 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="text-[12.5px] font-bold mt-6 shrink-0">Save more with yearly plans!</span>
-            </div>
+          {/* Decorative Save Callout */}
+          <div className="absolute left-[calc(50%+160px)] hidden sm:flex items-center gap-2 text-blue-600 pointer-events-none whitespace-nowrap">
+            <svg width="32" height="20" viewBox="0 0 40 24" fill="none" className="rotate-[15deg] shrink-0 mt-1">
+              <path d="M1 1C7.66667 18.3333 24.6 27.2 38 10M38 10L27 9M38 10L36 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-sm mt-5">
+              🔥 Save more with yearly!
+            </span>
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="flex flex-col lg:flex-row items-stretch justify-center gap-6 lg:gap-8 mb-16">
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto mb-16">
           
           {/* Basic Plan */}
-          <div className="flex-1 max-w-[380px] w-full mx-auto bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 shadow-sm flex flex-col relative">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+          <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col relative">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-sm">
                 <Send className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
-                <h3 className="text-[18px] font-bold text-slate-900">Basic</h3>
-                <p className="text-[12px] text-slate-500 font-medium">For individuals getting started</p>
+                <h3 className="text-xl font-extrabold text-slate-900">Basic</h3>
+                <p className="text-xs text-slate-500 font-medium">For individuals getting started</p>
               </div>
             </div>
 
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-5xl font-black text-slate-900">$0</span>
-              <span className="text-[14px] font-bold text-slate-500">/month</span>
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <span className="text-5xl font-black text-slate-900 tracking-tight">$0</span>
+              <span className="text-sm font-bold text-slate-400">/month</span>
             </div>
-            <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-full mb-8 self-start">
+            <div className="inline-block px-3 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-full mb-8 self-start border border-slate-200/60">
               Free forever
             </div>
 
@@ -82,108 +94,112 @@ export default function PricingSection() {
             <div className="flex flex-col gap-4 mb-10 flex-1">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Browse experts & categories</span>
+                <span className="text-sm text-slate-600 font-medium">Browse experts & categories</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Book up to 1 session per month</span>
+                <span className="text-sm text-slate-600 font-medium">Book up to 1 session per month</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Chat & message support</span>
+                <span className="text-sm text-slate-600 font-medium">Chat & message support</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Session reminders</span>
+                <span className="text-sm text-slate-600 font-medium">Session reminders</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Basic account security</span>
+                <span className="text-sm text-slate-600 font-medium">Basic account security</span>
               </div>
             </div>
 
-            <button className="w-full bg-white hover:bg-blue-50 text-blue-600 border-2 border-blue-100 hover:border-blue-200 font-bold text-[14px] py-4 rounded-xl transition-colors mt-auto">
-              Get Started Free
+            <button className="w-full bg-slate-50 hover:bg-blue-50 text-slate-800 hover:text-blue-600 border border-slate-200 hover:border-blue-200 font-bold text-sm py-4 rounded-2xl transition-all duration-200 cursor-pointer mt-auto flex items-center justify-center gap-2">
+              <span>Get Started Free</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Premium Plan */}
-          <div className="flex-1 max-w-[380px] w-full mx-auto bg-white rounded-3xl p-8 lg:p-10 border-2 border-blue-500 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.15)] flex flex-col relative transform lg:-translate-y-4">
+          {/* Premium Plan (Hero Most Popular Card) */}
+          <div className="bg-gradient-to-b from-white via-blue-50/20 to-white rounded-[2.5rem] p-8 lg:p-10 border-2 border-blue-500 shadow-[0_25px_60px_-15px_rgba(37,99,235,0.22)] flex flex-col relative transform lg:-translate-y-3 hover:-translate-y-4 transition-all duration-300 z-20">
             
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1.5 rounded-full text-[12px] font-bold shadow-md">
-              Most Popular
+            {/* Most Popular Floating Pill */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white px-5 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider shadow-lg shadow-blue-500/30 flex items-center gap-1.5 border border-white/20 whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+              <span>Most Popular</span>
             </div>
 
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/30">
                 <Crown className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
-                <h3 className="text-[18px] font-bold text-slate-900">Premium</h3>
-                <p className="text-[12px] text-slate-500 font-medium">For professionals & frequent users</p>
+                <h3 className="text-xl font-extrabold text-slate-900">Premium</h3>
+                <p className="text-xs text-slate-500 font-medium">For professionals & frequent users</p>
               </div>
             </div>
 
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-5xl font-black text-blue-600">${isYearly ? '23' : '29'}</span>
-              <span className="text-[14px] font-bold text-slate-500">/month</span>
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <span className="text-5xl font-black text-blue-600 tracking-tight">${isYearly ? '23' : '29'}</span>
+              <span className="text-sm font-bold text-slate-400">/month</span>
             </div>
-            <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-full mb-8 self-start">
-              Billed {isYearly ? 'yearly' : 'monthly'}
+            <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-full mb-8 self-start border border-blue-100">
+              Billed {isYearly ? 'yearly ($276/yr)' : 'monthly'}
             </div>
 
             <div className="w-full h-px bg-slate-100 mb-8" />
 
             <div className="flex flex-col gap-4 mb-10 flex-1">
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-900 font-bold">Everything in Basic</span>
+                <span className="text-sm text-slate-900 font-bold">Everything in Basic</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Unlimited session bookings</span>
+                <span className="text-sm text-slate-700 font-medium">Unlimited session bookings</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Priority customer support</span>
+                <span className="text-sm text-slate-700 font-medium">Priority customer support</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">HD video consultations</span>
+                <span className="text-sm text-slate-700 font-medium">HD video consultations</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Session notes & history</span>
+                <span className="text-sm text-slate-700 font-medium">Session notes & history</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Exclusive offers & discounts</span>
+                <span className="text-sm text-slate-700 font-medium">Exclusive offers & discounts</span>
               </div>
             </div>
 
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-[14px] py-4 rounded-xl transition-colors shadow-md shadow-blue-600/20 mt-auto">
-              Get Premium
+            <button className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm py-4 rounded-2xl transition-all duration-200 shadow-xl shadow-blue-600/30 hover:scale-[1.02] cursor-pointer mt-auto flex items-center justify-center gap-2">
+              <span>Get Premium</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* Business Plan */}
-          <div className="flex-1 max-w-[380px] w-full mx-auto bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 shadow-sm flex flex-col relative">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+          <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.03)] hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col relative">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-md">
                 <Briefcase className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
-                <h3 className="text-[18px] font-bold text-slate-900">Business</h3>
-                <p className="text-[12px] text-slate-500 font-medium">For teams & organizations</p>
+                <h3 className="text-xl font-extrabold text-slate-900">Business</h3>
+                <p className="text-xs text-slate-500 font-medium">For teams & organizations</p>
               </div>
             </div>
 
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-5xl font-black text-slate-900">${isYearly ? '63' : '79'}</span>
-              <span className="text-[14px] font-bold text-slate-500">/month</span>
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <span className="text-5xl font-black text-slate-900 tracking-tight">${isYearly ? '63' : '79'}</span>
+              <span className="text-sm font-bold text-slate-400">/month</span>
             </div>
-            <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-full mb-8 self-start">
-              Billed {isYearly ? 'yearly' : 'monthly'}
+            <div className="inline-block px-3 py-1 bg-purple-50 text-purple-700 text-[11px] font-bold rounded-full mb-8 self-start border border-purple-100">
+              Billed {isYearly ? 'yearly ($756/yr)' : 'monthly'}
             </div>
 
             <div className="w-full h-px bg-slate-100 mb-8" />
@@ -191,83 +207,88 @@ export default function PricingSection() {
             <div className="flex flex-col gap-4 mb-10 flex-1">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-900 font-bold">Everything in Premium</span>
+                <span className="text-sm text-slate-900 font-bold">Everything in Premium</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Team accounts & collaboration</span>
+                <span className="text-sm text-slate-600 font-medium">Team accounts & collaboration</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Advanced analytics & reports</span>
+                <span className="text-sm text-slate-600 font-medium">Advanced analytics & reports</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Dedicated account manager</span>
+                <span className="text-sm text-slate-600 font-medium">Dedicated account manager</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Custom integrations</span>
+                <span className="text-sm text-slate-600 font-medium">Custom integrations</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />
-                <span className="text-[13.5px] text-slate-600 font-medium">Priority scheduling</span>
+                <span className="text-sm text-slate-600 font-medium">Priority scheduling</span>
               </div>
             </div>
 
-            <button className="w-full bg-white hover:bg-blue-50 text-blue-600 border-2 border-blue-100 hover:border-blue-200 font-bold text-[14px] py-4 rounded-xl transition-colors mt-auto">
-              Get Business
+            <button className="w-full bg-slate-900 hover:bg-black text-white font-bold text-sm py-4 rounded-2xl transition-all duration-200 shadow-lg cursor-pointer mt-auto flex items-center justify-center gap-2">
+              <span>Get Business</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
         </div>
 
-        {/* Bottom Banner */}
-        <div className="bg-[#FAFCFF] rounded-3xl p-8 shadow-[0_5px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-4 max-w-[1100px] mx-auto">
+        {/* Bottom Trust & Guarantee Bar */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 lg:p-8 border border-slate-200/80 shadow-[0_15px_35px_-10px_rgba(15,23,42,0.05)] flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-4 max-w-5xl mx-auto">
           
-          <div className="flex items-center gap-4 flex-1 justify-center lg:justify-start px-2">
-            <div className="w-12 h-12 rounded-full border border-blue-200 bg-transparent flex items-center justify-center text-blue-600 shrink-0">
-              <ShieldCheck className="w-5 h-5" strokeWidth={1.5} />
+          {/* Guarantee 1 */}
+          <div className="flex items-center gap-3.5 flex-1 justify-center lg:justify-start px-2">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" strokeWidth={2} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-[14px] font-bold text-slate-900 leading-tight mb-1">Secure & Private</span>
-              <span className="text-[12px] font-medium text-slate-500">Your data is 100% safe<br/>and encrypted.</span>
+              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">Secure & Private</span>
+              <span className="text-xs font-medium text-slate-500">Your data is 100% safe &amp; encrypted.</span>
             </div>
           </div>
 
-          <div className="w-full h-px lg:w-px lg:h-12 bg-slate-200 opacity-60" />
+          <div className="w-full h-px lg:w-px lg:h-10 bg-slate-200/80" />
 
-          <div className="flex items-center gap-4 flex-1 justify-center px-2">
-            <div className="w-12 h-12 rounded-full border border-blue-200 bg-transparent flex items-center justify-center text-blue-600 shrink-0">
-              <Clock className="w-5 h-5" strokeWidth={1.5} />
+          {/* Guarantee 2 */}
+          <div className="flex items-center gap-3.5 flex-1 justify-center px-2">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" strokeWidth={2} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-[14px] font-bold text-slate-900 leading-tight mb-1">Cancel Anytime</span>
-              <span className="text-[12px] font-medium text-slate-500">No hidden fees.<br/>Cancel anytime.</span>
+              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">Cancel Anytime</span>
+              <span className="text-xs font-medium text-slate-500">No hidden fees. Cancel anytime.</span>
             </div>
           </div>
 
-          <div className="w-full h-px lg:w-px lg:h-12 bg-slate-200 opacity-60" />
+          <div className="w-full h-px lg:w-px lg:h-10 bg-slate-200/80" />
 
-          <div className="flex items-center gap-4 flex-1 justify-center px-2">
-            <div className="w-12 h-12 rounded-full border border-blue-200 bg-transparent flex items-center justify-center text-blue-600 shrink-0">
-              <Award className="w-5 h-5" strokeWidth={1.5} />
+          {/* Guarantee 3 */}
+          <div className="flex items-center gap-3.5 flex-1 justify-center px-2">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5" strokeWidth={2} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-[14px] font-bold text-slate-900 leading-tight mb-1">Money-Back Guarantee</span>
-              <span className="text-[12px] font-medium text-slate-500">Not satisfied? Get a full<br/>refund within 7 days.</span>
+              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">Money-Back Guarantee</span>
+              <span className="text-xs font-medium text-slate-500">7-day full refund policy.</span>
             </div>
           </div>
 
-          <div className="w-full h-px lg:w-px lg:h-12 bg-slate-200 opacity-60" />
+          <div className="w-full h-px lg:w-px lg:h-10 bg-slate-200/80" />
 
-          <div className="flex items-center gap-4 flex-1 justify-center lg:justify-end px-2">
-            <div className="w-12 h-12 rounded-full border border-blue-200 bg-transparent flex items-center justify-center text-blue-600 shrink-0">
-              <Headphones className="w-5 h-5" strokeWidth={1.5} />
+          {/* Guarantee 4 */}
+          <div className="flex items-center gap-3.5 flex-1 justify-center lg:justify-end px-2">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+              <Headphones className="w-5 h-5" strokeWidth={2} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-[14px] font-bold text-slate-900 leading-tight mb-1">24/7 Support</span>
-              <span className="text-[12px] font-medium text-slate-500">We're here to help<br/>around the clock.</span>
+              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">24/7 Priority Support</span>
+              <span className="text-xs font-medium text-slate-500">We're here around the clock.</span>
             </div>
           </div>
 
