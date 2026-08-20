@@ -18,6 +18,8 @@ interface Transaction {
     user: { name: string } | null;
     consultant: { name: string } | null;
     consultation: { duration: number } | null;
+    actualDuration?: number;
+    billedDuration?: number;
 }
 
 interface PaginationData {
@@ -26,6 +28,16 @@ interface PaginationData {
     page: number;
     totalPage: number;
 }
+
+const formatActualDuration = (duration?: number) => {
+    if (duration === undefined || duration === null) return "N/A";
+    if (duration >= 60) {
+        const mins = Math.floor(duration / 60);
+        const secs = duration % 60;
+        return secs > 0 ? `${mins}m ${secs}s` : `${mins} min`;
+    }
+    return `${duration}s`;
+};
 
 export default function PaymentsTable() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -80,9 +92,6 @@ export default function PaymentsTable() {
                             className="pl-9 h-11 w-full bg-[#FAFAFA] border-slate-200 rounded-xl text-[14px] text-slate-800 placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-blue-100"
                         />
                     </div>
-                    <button className="bg-[#FE6D2C] hover:bg-[#E85D20] text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-[#FE6D2C]/20 transition-all active:scale-95 whitespace-nowrap">
-                        Process Bulk Payout
-                    </button>
                 </div>
             </div>
 
@@ -91,18 +100,19 @@ export default function PaymentsTable() {
                 <table className="w-full text-left whitespace-nowrap">
                     <thead>
                         <tr className="bg-[#FAFAFA] border-b border-slate-100">
-                            <th className="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">TRANSACTION DETAILS</th>
-                            <th className="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CUSTOMER</th>
-                            <th className="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CONSULTANT</th>
-                            <th className="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">DURATION</th>
-                            <th className="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">AMOUNT RECEIVED</th>
-                            <th className="px-8 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">STATUS</th>
+                            <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">TRANSACTION DETAILS</th>
+                            <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CUSTOMER</th>
+                            <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CONSULTANT</th>
+                            {/* <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">ACTUAL DURATION</th> */}
+                            <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">BILLED DURATION</th>
+                            <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">AMOUNT RECEIVED</th>
+                            <th className="px-6 py-5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">STATUS</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-8 py-20 text-center">
+                                <td colSpan={6} className="px-6 py-20 text-center">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                                         <p className="text-sm text-slate-500 font-medium">Loading transactions...</p>
@@ -111,13 +121,13 @@ export default function PaymentsTable() {
                             </tr>
                         ) : transactions.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-8 py-12 text-center text-slate-500 text-sm font-medium">
+                                <td colSpan={6} className="px-6 py-12 text-center text-slate-500 text-sm font-medium">
                                     No transactions found.
                                 </td>
                             </tr>
                         ) : transactions.map((tx) => (
                             <tr key={tx._id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-8 py-6">
+                                <td className="px-6 py-6">
                                     <div className="flex flex-col">
                                         <span className="text-[14px] font-bold text-slate-800 uppercase">{tx.transactionId}</span>
                                         <span className="text-[12px] text-slate-400 font-medium mt-0.5">
@@ -125,23 +135,34 @@ export default function PaymentsTable() {
                                         </span>
                                     </div>
                                 </td>
-                                <td className="px-8 py-6">
+                                <td className="px-6 py-6">
                                     <span className="text-[14px] font-bold text-slate-800">{tx.user?.name || "N/A"}</span>
                                 </td>
-                                <td className="px-8 py-6">
+                                <td className="px-6 py-6">
                                     <span className="text-[14px] font-medium text-slate-500">{tx.consultant?.name || "N/A"}</span>
                                 </td>
-                                <td className="px-8 py-6">
-                                    <span className="text-[14px] font-medium text-slate-500">
-                                        {tx.consultation?.duration ? `${tx.consultation.duration} min` : "N/A"}
+                                {/* <td className="px-6 py-6">
+                                    <span className="text-[14px] font-medium text-slate-600">
+                                        {tx.actualDuration !== undefined && tx.actualDuration !== null
+                                            ? formatActualDuration(tx.actualDuration)
+                                            : tx.consultation?.duration
+                                            ? `${tx.consultation.duration} min`
+                                            : "N/A"}
+                                    </span>
+                                </td> */}
+                                <td className="px-6 py-6">
+                                    <span className="text-[14px] font-medium text-slate-600">
+                                        {tx.billedDuration !== undefined && tx.billedDuration !== null
+                                            ? `${tx.billedDuration} min`
+                                            : "N/A"}
                                     </span>
                                 </td>
-                                <td className="px-8 py-6 text-right">
+                                <td className="px-6 py-6 text-right">
                                     <span className="text-[15px] font-black text-blue-600">
                                         €{tx.amount.toFixed(2)}
                                     </span>
                                 </td>
-                                <td className="px-8 py-6 text-center">
+                                <td className="px-6 py-6 text-center">
                                     <span
                                         className={cn(
                                             "inline-flex items-center px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase border",

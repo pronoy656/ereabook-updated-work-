@@ -7,6 +7,7 @@ import api from '@/lib/axios';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getImageUrl } from '@/lib/utils';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface RequestData {
   id: string;
@@ -22,12 +23,13 @@ interface RequestData {
 
 const AcceptedActionState = ({ req }: { req: RequestData }) => {
   const router = useRouter();
+  const t = useTranslations('consultant_overview');
 
   const handleJoinCall = () => {
     if (req.tabType === "Schedule" && req.scheduledAt && !isNaN(req.scheduledAt)) {
       const diffMs = req.scheduledAt - Date.now();
       if (diffMs > 5 * 60 * 1000) {
-        toast.error("You can only join the call 5 minutes before the scheduled time.");
+        toast.error(t('join_call_5min_error'));
         return;
       }
     }
@@ -40,12 +42,14 @@ const AcceptedActionState = ({ req }: { req: RequestData }) => {
       className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 animate-in zoom-in duration-300"
     >
       <Video className="w-4 h-4" /> 
-      Join Call
+      {t('join_call')}
     </button>
   );
 };
 
 export function UpcomingScheduledBookings() {
+  const t = useTranslations('consultant_overview');
+  const locale = useLocale();
   const router = useRouter();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +72,8 @@ export function UpcomingScheduledBookings() {
             item.status?.toLowerCase() !== "cancelled"
           )
           .map((item: any) => {
-            let timeDisplay = `${item.startTime} - ${item.endTime}, ${format(new Date(item.date), 'MMM dd, yyyy')}`;
+            let dateStr = new Date(item.date).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            let timeDisplay = `${item.startTime} - ${item.endTime}, ${dateStr}`;
             let scheduledAt = new Date(item.createdAt).getTime();
             if (item.date && item.startTime) {
               const datePart = item.date.split('T')[0];
@@ -101,7 +106,7 @@ export function UpcomingScheduledBookings() {
         setRequests(mappedData);
       }
     } catch (error: any) {
-      if (!silent) toast.error("Failed to fetch upcoming scheduled bookings");
+      if (!silent) toast.error(t('fetch_bookings_error'));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -109,7 +114,7 @@ export function UpcomingScheduledBookings() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [locale]);
 
   const handleStatusUpdate = async (id: string, status: string, type: 'accept' | 'reject', shouldRefresh = true) => {
     try {
@@ -153,7 +158,7 @@ export function UpcomingScheduledBookings() {
           <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
             <Calendar className="w-4 h-4 text-blue-600" />
           </div>
-          <h3 className="text-base font-bold text-slate-800">Upcoming Scheduled Bookings</h3>
+          <h3 className="text-base font-bold text-slate-800">{t('upcoming_scheduled_bookings')}</h3>
         </div>
       </div>
 
@@ -161,11 +166,11 @@ export function UpcomingScheduledBookings() {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-48 text-center bg-white rounded-2xl border border-slate-100 shadow-sm">
              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
-             <p className="text-slate-500 font-medium">Fetching scheduled bookings...</p>
+             <p className="text-slate-500 font-medium">{t('fetching_scheduled_bookings')}</p>
           </div>
         ) : requests.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center bg-white rounded-2xl border border-slate-100 shadow-sm">
-            <p className="text-slate-500 font-medium">No upcoming scheduled bookings.</p>
+            <p className="text-slate-500 font-medium">{t('no_upcoming_scheduled_bookings')}</p>
           </div>
         ) : (
           requests.map((req) => (
@@ -201,7 +206,7 @@ export function UpcomingScheduledBookings() {
                   </div>
                   <div className="inline-flex max-w-lg mt-1">
                     <p className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-[13px] text-slate-600">
-                      <strong className="text-slate-800">Notes: </strong>{req.notes}
+                      <strong className="text-slate-800">{t('notes')} </strong>{req.notes}
                     </p>
                   </div>
                 </div>
@@ -222,7 +227,7 @@ export function UpcomingScheduledBookings() {
                       ) : (
                         <Check className="w-4 h-4" />
                       )} 
-                      Accept
+                      {t('accept')}
                     </button>
                     <button
                       onClick={() => handleReject(req.id)}
@@ -234,7 +239,7 @@ export function UpcomingScheduledBookings() {
                       ) : (
                         <X className="w-4 h-4" />
                       )} 
-                      Reject
+                      {t('reject')}
                     </button>
                   </>
                 )}

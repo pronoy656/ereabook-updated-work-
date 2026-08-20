@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '@/lib/axios';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 
 export function ConsultationTrendChart() {
+  const t = useTranslations("admin_overview");
   const [data, setData] = useState<{name: string, value: number}[]>([]);
   const [months, setMonths] = useState(6);
   const [loading, setLoading] = useState(true);
@@ -31,14 +33,14 @@ export function ConsultationTrendChart() {
   return (
     <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col h-full transition-colors">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Consultations Trend</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t("consultations_trend")}</h3>
         <Select value={months.toString()} onValueChange={(val) => setMonths(Number(val))}>
           <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-slate-200 dark:border-slate-800 bg-transparent text-slate-500 dark:text-slate-400 focus:ring-0 focus:ring-offset-0">
-            <SelectValue placeholder="Select timeframe" />
+            <SelectValue placeholder={t("select_timeframe")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="6">Last 6 Months</SelectItem>
-            <SelectItem value="12">Last Year</SelectItem>
+            <SelectItem value="6">{t("last_6_months")}</SelectItem>
+            <SelectItem value="12">{t("last_year")}</SelectItem>
           </SelectContent>
         </Select>
       </div>

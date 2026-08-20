@@ -7,6 +7,7 @@ import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface RecurringHoursProps {
   availabilityData: Record<string, TimeSlot[]>;
@@ -30,6 +31,8 @@ const generateTimeOptions = (minTime?: string) => {
 };
 
 export default function RecurringHours({ availabilityData, setAvailabilityData }: RecurringHoursProps) {
+  const t = useTranslations('consultant_availability');
+  const locale = useLocale();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -47,7 +50,13 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDay === 0 ? 6 : firstDay - 1 }, (_, i) => i); 
 
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthKeys = [
+    'month_january', 'month_february', 'month_march', 'month_april',
+    'month_may', 'month_june', 'month_july', 'month_august',
+    'month_september', 'month_october', 'month_november', 'month_december'
+  ];
+
+  const weekDayKeys = ['days_mo', 'days_tu', 'days_we', 'days_th', 'days_fr', 'days_sa', 'days_su'];
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -155,7 +164,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
       }
       
       if (isOverlapping(defaultStart)) {
-        toast.error("No free time slots available to add on this date.");
+        toast.error(t('no_free_slots_error'));
         return prev;
       }
       
@@ -189,7 +198,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
       );
 
       if (isDuplicate) {
-        toast.error("This exact time slot already exists for this date.");
+        toast.error(t('exact_slot_exists_error'));
         return prev; // Do not apply the change
       }
 
@@ -225,7 +234,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
         <div className="border border-slate-100 rounded-2xl shadow-sm bg-white p-5">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-bold text-slate-800 text-[17px]">
-              {monthNames[month]} {year}
+              {t(monthKeys[month])} {year}
             </h2>
             <div className="flex items-center gap-1">
               <button onClick={prevMonth} className="p-2 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors">
@@ -238,9 +247,9 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-2">
-            {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
-              <div key={d} className="text-center text-xs font-bold text-slate-400 py-2">
-                {d}
+            {weekDayKeys.map(dayKey => (
+              <div key={dayKey} className="text-center text-xs font-bold text-slate-400 py-2">
+                {t(dayKey)}
               </div>
             ))}
           </div>
@@ -286,12 +295,12 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-blue-500" />
-                {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                {selectedDate.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </h3>
               {loadingSlots && <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />}
             </div>
             <p className="text-slate-500 text-sm mb-8">
-              Configure your specific unavailability for this date.
+              {t('configure_unavailability_for_date')}
             </p>
 
             <div className="space-y-4">
@@ -366,7 +375,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
                       <button 
                         onClick={() => handleRemoveSlot(idx)}
                         className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors self-end sm:self-auto shrink-0"
-                        title="Remove Time Slot"
+                        title={t('remove_slot')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -375,8 +384,8 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
                }) : !loadingSlots && (
                  <div className="text-center py-8 bg-white rounded-xl border border-slate-100 shadow-sm border-dashed">
                    <Clock className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                   <p className="text-slate-600 font-bold text-[15px]">No time slots yet</p>
-                   <p className="text-slate-400 text-sm mt-1">You are currently available on this date.</p>
+                   <p className="text-slate-600 font-bold text-[15px]">{t('no_time_slots_yet')}</p>
+                   <p className="text-slate-400 text-sm mt-1">{t('available_on_this_date')}</p>
                  </div>
                )}
 
@@ -384,7 +393,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
                  onClick={handleAddSlot}
                  className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold text-[15px] hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 mt-2"
                >
-                 <Plus className="w-4 h-4" /> {slots.length === 0 ? 'Add Your First Time Slot' : 'Add Another Time Slot'}
+                 <Plus className="w-4 h-4" /> {slots.length === 0 ? t('add_first_slot') : t('add_another_slot')}
                </button>
             </div>
           </div>
@@ -393,9 +402,9 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
             <div className="w-16 h-16 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-4">
               <CalendarIcon className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Select Date</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">{t('select_date')}</h3>
             <p className="text-slate-500 text-[14px] max-w-sm">
-              Select specific dates on the calendar to configure unavailability.
+              {t('select_date_desc')}
             </p>
           </div>
         )}

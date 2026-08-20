@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
@@ -19,37 +20,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-const items = [
-  {
-    group: "Main Menu", links: [
-      { href: "/admin/overview", label: "Overview", Icon: LayoutDashboard },
-      { 
-        href: "/admin/users", 
-        label: "Users", 
-        Icon: Users,
-        subLinks: [
-          { href: "/admin/users/customers", label: "Customers" },
-          { href: "/admin/users/consultants", label: "Consultants" }
-        ]
-      },
-      { href: "/admin/reports", label: "Reports", Icon: FileText },
-      { href: "/admin/legal", label: "Legal", Icon: FileText },
-      { href: "/admin/live-monitoring", label: "Live Monitoring", Icon: Activity },
-      { href: "/admin/payments", label: "Payments", Icon: CreditCard },
-      { href: "/admin/support", label: "Support", Icon: Headphones },
-    ]
-  },
-  {
-    group: "Preferences", links: [
-      { href: "/admin/settings", label: "Settings", Icon: Settings },
-    ]
-  }
-];
-
 export default function Sidebar({ active }: { active?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
+  const t = useTranslations("admin_sidebar");
   const current = active ?? pathname ?? "";
   
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
@@ -61,6 +36,34 @@ export default function Sidebar({ active }: { active?: string }) {
     setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
+  const items = [
+    {
+      group: t("main_menu"), links: [
+        { href: "/admin/overview", label: t("overview"), Icon: LayoutDashboard },
+        { 
+          href: "/admin/users", 
+          label: t("users"), 
+          Icon: Users,
+          subLinks: [
+            { href: "/admin/users/customers", label: t("customers") },
+            { href: "/admin/users/consultants", label: t("consultants") },
+            { href: "/admin/users/consultant-type", label: t("consultant_types") }
+          ]
+        },
+        { href: "/admin/reports", label: t("reports"), Icon: FileText },
+        { href: "/admin/legal", label: t("legal"), Icon: FileText },
+        { href: "/admin/live-monitoring", label: t("live_monitoring"), Icon: Activity },
+        { href: "/admin/payments", label: t("payments"), Icon: CreditCard },
+        { href: "/admin/support", label: t("support"), Icon: Headphones },
+      ]
+    },
+    {
+      group: t("preferences"), links: [
+        { href: "/admin/settings", label: t("settings"), Icon: Settings },
+      ]
+    }
+  ];
+
   return (
     <aside className="h-screen w-64 bg-white dark:bg-[#1e293b] text-slate-600 dark:text-slate-300 border-r border-slate-100 dark:border-slate-800 fixed left-0 top-0 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-colors duration-300 z-50">
       <div className="p-8 pb-10">
@@ -71,8 +74,8 @@ export default function Sidebar({ active }: { active?: string }) {
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none transition-colors">Fixpair</span>
-            <span className="text-[10px] text-blue-500 font-bold uppercase tracking-[0.2em] mt-1 ml-0.5">Admin</span>
+            <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none transition-colors">{t("fixpair")}</span>
+            <span className="text-[10px] text-blue-500 font-bold uppercase tracking-[0.2em] mt-1 ml-0.5">{t("admin")}</span>
           </div>
         </div>
       </div>
@@ -86,9 +89,10 @@ export default function Sidebar({ active }: { active?: string }) {
             <nav className="space-y-1.5">
               {group.links.map((item) => {
                 const hasSubLinks = !!item.subLinks;
-                const isExactActive = current === item.href;
-                const isChildActive = hasSubLinks && item.subLinks!.some(sub => current === sub.href);
+                const isExactActive = current === item.href || current.startsWith('/de' + item.href); // Fallback handle local
+                const isChildActive = hasSubLinks && item.subLinks!.some(sub => current === sub.href || current.startsWith('/de' + sub.href));
                 const isActive = isExactActive || isChildActive;
+                // Use original english label to track open state for simplicity if preferred, or the translated label. Since we moved items array inside the component, label is translated. We'll track by translated label.
                 const isOpen = openMenus[item.label];
 
                 return (
@@ -122,7 +126,7 @@ export default function Sidebar({ active }: { active?: string }) {
                     {hasSubLinks && isOpen && (
                       <div className="mt-1 ml-4 pl-4 border-l border-slate-100 dark:border-slate-800 space-y-1 transition-colors">
                         {item.subLinks!.map(sub => {
-                          const isSubActive = current === sub.href;
+                          const isSubActive = current === sub.href || current.startsWith('/de' + sub.href);
                           return (
                             <Link
                               key={sub.label}
@@ -155,8 +159,8 @@ export default function Sidebar({ active }: { active?: string }) {
               SA
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate max-w-[100px] transition-colors">Super Admin</p>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 transition-colors">Admin</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate max-w-[100px] transition-colors">{t("super_admin")}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 transition-colors">{t("admin")}</p>
             </div>
           </div>
           <button onClick={() => logout()} className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all duration-200 group/logout">

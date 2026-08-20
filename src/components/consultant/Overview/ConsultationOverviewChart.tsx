@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslations, useLocale } from 'next-intl';
 
 const mockData = [
   { date: 'May 20', upcoming: 24, completed: 14, cancelled: 2 },
@@ -31,20 +32,21 @@ const mockData = [
 ];
 
 export function ConsultationOverviewChart() {
-  const [timeFilter, setTimeFilter] = useState("Last 30 Days");
+  const t = useTranslations('consultant_overview');
+  const locale = useLocale();
+  const [daysFilter, setDaysFilter] = useState<number>(30);
   const [chartData, setChartData] = useState<any[]>(mockData);
 
   useEffect(() => {
     const fetchTrendData = async () => {
       try {
-        const daysParam = timeFilter === "Last 7 Days" ? 7 : 30;
-        const response = await api.get(`/consultant/consultation-trend?days=${daysParam}`);
+        const response = await api.get(`/consultant/consultation-trend?days=${daysFilter}`);
         const points = response.data?.data?.points;
         
         if (Array.isArray(points) && points.length > 0) {
           const formattedData = points.map((p: any) => {
             const dateObj = new Date(p.date);
-            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const formattedDate = dateObj.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' });
             return {
               date: formattedDate,
               upcoming: p.upcoming || 0,
@@ -60,22 +62,22 @@ export function ConsultationOverviewChart() {
     };
     
     fetchTrendData();
-  }, [timeFilter]);
+  }, [daysFilter, locale]);
 
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-[400px]">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Consultation Overview</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t('consultation_overview')}</h3>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              {timeFilter} <ChevronDown className="w-3.5 h-3.5" />
+              {daysFilter === 7 ? t('last_7_days') : t('last_30_days')} <ChevronDown className="w-3.5 h-3.5" />
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem onClick={() => setTimeFilter("Last 7 Days")}>Last 7 Days</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTimeFilter("Last 30 Days")}>Last 30 Days</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDaysFilter(7)}>{t('last_7_days')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDaysFilter(30)}>{t('last_30_days')}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -83,15 +85,15 @@ export function ConsultationOverviewChart() {
       <div className="flex items-center gap-6 mb-4">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Upcoming</span>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{t('upcoming')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Completed</span>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{t('completed')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Cancelled</span>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{t('cancelled')}</span>
         </div>
       </div>
 

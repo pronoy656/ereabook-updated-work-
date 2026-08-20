@@ -125,7 +125,7 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
 
   // Mute states
   const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(true);
 
   // Use refs for stable cleanup closures in Strict Mode
   const clientRef = useRef<IAgoraRTCClient | null>(null);
@@ -359,6 +359,7 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
 
           if (!localVideoRef.current) {
             const videoTrack = await AgoraRTC.createCameraVideoTrack();
+            await videoTrack.setMuted(true);
             localVideoRef.current = videoTrack;
             setLocalVideoTrack(videoTrack);
           }

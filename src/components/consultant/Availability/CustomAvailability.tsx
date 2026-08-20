@@ -6,8 +6,11 @@ import { TimeSlot } from './AvailabilityManagement';
 import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function CustomAvailability() {
+  const t = useTranslations('consultant_availability');
+  const locale = useLocale();
   const [availabilityData, setAvailabilityData] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -56,7 +59,7 @@ export default function CustomAvailability() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-        <p className="text-slate-500 text-sm">Loading unavailability...</p>
+        <p className="text-slate-500 text-sm">{t('loading_unavailability')}</p>
       </div>
     );
   }
@@ -67,7 +70,7 @@ export default function CustomAvailability() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
              <CalendarIcon className="w-5 h-5 text-blue-500" />
-             Read-Only View over customized dates
+             {t('readonly_view')}
           </h3>
         </div>
 
@@ -76,9 +79,9 @@ export default function CustomAvailability() {
             <div className="w-16 h-16 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-4">
               <CalendarIcon className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2">No Custom Unavailability</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">{t('no_custom_unavailability')}</h3>
             <p className="text-slate-500 text-[14px] max-w-sm">
-              To view entries here, select specific dates and configure time slots inside the <strong className="text-slate-700">Recurring Hours</strong> tab. Details will automatically surface here.
+              {t('no_custom_unavailability_desc')}
             </p>
           </div>
         ) : (
@@ -91,10 +94,10 @@ export default function CustomAvailability() {
                 <div key={dateStr} className="flex flex-col md:flex-row md:items-start gap-4 md:gap-8 bg-[#FAFAFA] border border-slate-100 rounded-xl p-5">
                   <div className="w-48 shrink-0 flex flex-col pt-1">
                     <span className="font-bold text-slate-800">
-                      {d.toLocaleDateString('en-US', { weekday: 'long' })}
+                      {d.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { weekday: 'long' })}
                     </span>
                     <span className="text-slate-500 text-sm">
-                      {d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      {d.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
 
@@ -120,9 +123,9 @@ export default function CustomAvailability() {
                             isUnavailable ? "text-rose-500" : "text-emerald-600"
                           )}>
                             {isUnavailable ? (
-                              <><XCircle className="w-3 h-3" /> Unavailable</>
+                              <><XCircle className="w-3 h-3" /> {t('unavailable')}</>
                             ) : (
-                              <><CheckCircle2 className="w-3 h-3" /> Available</>
+                              <><CheckCircle2 className="w-3 h-3" /> {t('available')}</>
                             )}
                           </div>
                         </div>

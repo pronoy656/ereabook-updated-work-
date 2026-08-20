@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { User, Loader2 } from 'lucide-react';
 import { cn, getImageUrl } from '@/lib/utils';
 import api from '@/lib/axios';
+import { useTranslations } from "next-intl";
 
 interface RecentConsultation {
   consultationId: string;
@@ -30,6 +31,7 @@ function formatDateTime(isoString: string) {
 }
 
 export function RecentConsultationsTable() {
+  const t = useTranslations("admin_overview");
   const [data, setData] = useState<RecentConsultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -54,7 +56,7 @@ export function RecentConsultationsTable() {
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full overflow-hidden transition-colors relative">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Recent Consultations</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t("recent_consultations")}</h3>
       </div>
 
       <div className="overflow-x-auto relative min-h-[200px]">
@@ -66,16 +68,17 @@ export function RecentConsultationsTable() {
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 rounded-l-lg">Customer</th>
-              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Consultant</th>
-              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Date & Time</th>
-              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Status</th>
-              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 rounded-r-lg">Payment</th>
+              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 rounded-l-lg">{t("customer")}</th>
+              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("consultant")}</th>
+              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("date_time")}</th>
+              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{t("status")}</th>
+              <th className="py-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 rounded-r-lg">{t("payment")}</th>
             </tr>
           </thead>
           <tbody>
             {data.map((item, index) => {
-              const statusName = item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1).toLowerCase() : 'Unknown';
+              const statusKey = item.status ? `status_${item.status.toLowerCase()}` : 'unknown';
+              const translatedStatus = t(statusKey as any) || item.status || 'Unknown';
               return (
                 <tr key={item.consultationId || index} className="border-b border-slate-50 dark:border-slate-800/50 last:border-0 hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
                   <td className="py-3 px-2">
@@ -83,7 +86,7 @@ export function RecentConsultationsTable() {
                       {item.patientImage && !imageErrors[`patient_${item.consultationId || index}`] ? (
                         <img 
                           src={getImageUrl(item.patientImage)} 
-                          alt={item.patientName || 'Patient'} 
+                          alt={item.patientName || t("patient")} 
                           className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
                           onError={() => setImageErrors(prev => ({ ...prev, [`patient_${item.consultationId || index}`]: true }))}
                         />
@@ -92,7 +95,7 @@ export function RecentConsultationsTable() {
                           <User className="w-3.5 h-3.5" />
                         </div>
                       )}
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.patientName || 'Unknown User'}</span>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.patientName || t("unknown_user")}</span>
                     </div>
                   </td>
                   <td className="py-3 px-2">
@@ -100,7 +103,7 @@ export function RecentConsultationsTable() {
                       {item.consultantImage && !imageErrors[`consultant_${item.consultationId || index}`] ? (
                         <img 
                           src={getImageUrl(item.consultantImage)} 
-                          alt={item.consultantName || 'Consultant'} 
+                          alt={item.consultantName || t("consultant")} 
                           className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
                           onError={() => setImageErrors(prev => ({ ...prev, [`consultant_${item.consultationId || index}`]: true }))}
                         />
@@ -109,19 +112,19 @@ export function RecentConsultationsTable() {
                           <User className="w-3.5 h-3.5" />
                         </div>
                       )}
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.consultantName || 'Unknown Consultant'}</span>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.consultantName || t("unknown_consultant")}</span>
                     </div>
                   </td>
                   <td className="py-3 px-2 text-xs font-medium text-slate-500 dark:text-slate-500">{formatDateTime(item.scheduledAt)}</td>
                   <td className="py-3 px-2">
                     <span className={cn(
                       "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                      statusName === 'Completed' ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" :
-                      statusName === 'Ongoing' ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400" :
-                      statusName === 'Cancelled' ? "bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400" :
+                      item.status?.toLowerCase() === 'completed' ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" :
+                      item.status?.toLowerCase() === 'ongoing' ? "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400" :
+                      item.status?.toLowerCase() === 'cancelled' ? "bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400" :
                       "bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400"
                     )}>
-                      {statusName}
+                      {translatedStatus}
                     </span>
                   </td>
                   <td className="py-3 px-2">
@@ -131,7 +134,7 @@ export function RecentConsultationsTable() {
                         "text-[10px] font-bold uppercase",
                         (item.paymentAmount || 0) > 0 ? "text-emerald-500" : "text-amber-500"
                       )}>
-                        {(item.paymentAmount || 0) > 0 ? 'Paid' : 'Pending'}
+                        {(item.paymentAmount || 0) > 0 ? t("paid") : t("payment_pending")}
                       </span>
                     </div>
                   </td>

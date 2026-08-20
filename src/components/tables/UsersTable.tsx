@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 
 interface User {
   _id: string;
@@ -33,6 +35,7 @@ interface PaginationData {
 
 export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
   const router = useRouter();
+  const t = useTranslations("admin_users");
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +84,24 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [consultancyTypes, setConsultancyTypes] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (role === "CONSULTANT") {
+      const fetchTypes = async () => {
+        try {
+          const res = await api.get('/consultancy-type?activeOnly=true');
+          if (res.data?.success) {
+            setConsultancyTypes(res.data.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch consultancy types", err);
+        }
+      };
+      fetchTypes();
+    }
+  }, [role]);
 
   const fetchUsers = async () => {
     try {
@@ -316,9 +337,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
       {/* Header section */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{role === "USER" ? "Customers" : "Consultants"}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{role === "USER" ? t("customers") : t("consultants")}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium text-sm">
-            Manage {role === "USER" ? "customers" : "consultants"} and their statuses
+            {role === "USER" ? t("manage_customers") : t("manage_consultants")}
           </p>
         </div>
 
@@ -330,7 +351,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95 flex items-center gap-2"
             >
               <Trash2 className="w-4 h-4" />
-              Delete ({selectedIds.length})
+              {t("delete")} ({selectedIds.length})
             </button>
           )}
 
@@ -339,17 +360,17 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <button className="bg-[#FE6D2C] hover:bg-[#E85D20] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-[#FE6D2C]/20 transition-transform active:scale-95">
-              Add Consultant
+              {t("add_consultant")}
             </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto dark:bg-[#1e293b] dark:text-white border-none">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Add Consultant</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">Add a new consultant to the system.</DialogDescription>
+              <DialogTitle className="text-xl font-bold">{t("add_consultant")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400"></DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSignup} className="space-y-4 mt-2">
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Profile Picture</label>
+                <label className="text-sm font-semibold text-slate-700">{t("profile_picture")}</label>
                 <div className="flex items-center gap-4">
                    <div 
                      className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 overflow-hidden cursor-pointer"
@@ -361,13 +382,13 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                        <Plus className="w-6 h-6" />
                      )}
                    </div>
-                   <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>Upload Image</button>
+                   <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>{t("upload_image")}</button>
                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Full Name <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700">{t("full_name")} <span className="text-red-500">*</span></label>
                   <Input 
                     placeholder="John Doe" 
                     className="bg-slate-50" 
@@ -377,7 +398,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Email Address <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700">{t("email_address")} <span className="text-red-500">*</span></label>
                   <Input 
                     placeholder="john@example.com" 
                     type="email" 
@@ -388,7 +409,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Password <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700">{t("password")} <span className="text-red-500">*</span></label>
                   <Input 
                     placeholder="••••••••" 
                     type="password" 
@@ -399,7 +420,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Phone Number</label>
+                  <label className="text-sm font-semibold text-slate-700">{t("phone_number")}</label>
                   <Input 
                     placeholder="+1 (555) 000-0000" 
                     className="bg-slate-50" 
@@ -407,17 +428,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                   />
                 </div>
+
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Professional Details</label>
-                  <Input 
-                    placeholder="E.g. Certified Accountant" 
-                    className="bg-slate-50" 
-                    value={formData.professionalDetails}
-                    onChange={(e) => setFormData({ ...formData, professionalDetails: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Specialization</label>
+                  <label className="text-sm font-semibold text-slate-700">{t("specialization")}</label>
                   <Input 
                     placeholder="Tax Consulting" 
                     className="bg-slate-50" 
@@ -425,17 +438,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                   />
                 </div>
+
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Sub-speciality</label>
-                  <Input 
-                    placeholder="Corporate Tax" 
-                    className="bg-slate-50" 
-                    value={formData.subSpeciality}
-                    onChange={(e) => setFormData({ ...formData, subSpeciality: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Years of Experience</label>
+                  <label className="text-sm font-semibold text-slate-700">{t("years_of_experience")}</label>
                   <Input 
                     placeholder="10" 
                     type="number" 
@@ -445,21 +450,26 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Consultancy Type <span className="text-red-500">*</span></label>
-                  <select 
-                    className="w-full h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  <label className="text-sm font-semibold text-slate-700">{t("consultancy_type")} <span className="text-red-500">*</span></label>
+                  <Select 
                     required
                     value={formData.consultancyType}
-                    onChange={(e) => setFormData({ ...formData, consultancyType: e.target.value })}
+                    onValueChange={(value) => setFormData({ ...formData, consultancyType: value })}
                   >
-                    <option value="">Select type...</option>
-                    <option value="doctor">Doctor</option>
-                    <option value="lawyer">Lawyer</option>
-                    <option value="advisor">Advisor</option>
-                  </select>
+                    <SelectTrigger className="w-full h-10 px-3 bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none">
+                      <SelectValue placeholder="Select type..." />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      {consultancyTypes.map((type) => (
+                        <SelectItem key={type._id} value={type._id}>
+                          <span className="capitalize">{type.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Per Minute Rate ($) <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-semibold text-slate-700">{t("per_minute_rate")} <span className="text-red-500">*</span></label>
                   <Input 
                     placeholder="10" 
                     type="number"
@@ -470,13 +480,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     onChange={(e) => setFormData({ ...formData, perMinuteRate: e.target.value })}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Role</label>
-                  <Input value="CONSULTANT" readOnly className="bg-slate-100 cursor-not-allowed font-bold text-slate-500" />
-                </div>
               </div>
               <div className="space-y-1 pt-2">
-                <label className="text-sm font-semibold text-slate-700">Bio/About</label>
+                <label className="text-sm font-semibold text-slate-700">{t("bio_about")}</label>
                 <textarea 
                   className="w-full h-24 p-3 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                   placeholder="Brief description about the consultant..."
@@ -491,7 +497,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   onClick={() => setIsAddOpen(false)}
                   className="px-4 py-2 font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button 
                   type="submit"
@@ -501,10 +507,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   {isSigningUp ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Signing up...
+                      {t("signing_up")}
                     </>
                   ) : (
-                    "Signup Consultant"
+                    t("signup_consultant")
                   )}
                 </button>
               </div>
@@ -518,7 +524,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
         <Dialog open={isOtpOpen} onOpenChange={setIsOtpOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Email Verification</DialogTitle>
+              <DialogTitle className="text-xl font-bold">{t("email_verification")}</DialogTitle>
               <DialogDescription>
                 We've sent an OTP to <span className="font-bold text-slate-900">{formData.email}</span>. Please enter it below to verify the consultant account.
               </DialogDescription>
@@ -546,10 +552,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   {isVerifying ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Verifying...
+                      {t("verify_complete")}
                     </>
                   ) : (
-                    "Verify & Complete Signup"
+                    t("verify_complete")
                   )}
                 </button>
                 <button
@@ -558,7 +564,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   disabled={resendingOtp}
                   className="w-full text-sm font-bold text-blue-600 hover:text-blue-700 py-2 disabled:opacity-50"
                 >
-                  {resendingOtp ? "Sending..." : "Didn't receive code? Resend OTP"}
+                  {resendingOtp ? t("sending") : t("resend_otp")}
                 </button>
               </div>
             </form>
@@ -574,7 +580,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
             <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                 <Input
-                    placeholder="Search by name, email, or ID..."
+                    placeholder={t("search_placeholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 h-10 bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-700 rounded-xl text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-blue-100 dark:focus-visible:ring-blue-900"
@@ -594,10 +600,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">USER</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">STATUS</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">JOIN DATE</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">ACTIONS</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t("user")}</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t("status")}</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t("join_date")}</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">{t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -606,14 +612,14 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   <td colSpan={5} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                      <p className="text-sm text-slate-500 font-medium">Loading users...</p>
+                      <p className="text-sm text-slate-500 font-medium">{t("loading_users")}</p>
                     </div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500 text-sm font-medium">
-                    No users found matching your criteria.
+                    {t("no_users_found")}
                   </td>
                 </tr>
               ) : (
@@ -655,7 +661,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                           user.status.toLowerCase() === "suspended" && "bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400"
                         )}
                       >
-                        {user.status}
+                        {t(user.status.toLowerCase() as any) || user.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -679,7 +685,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                               subSpeciality: (user as any).subSpeciality || "",
                               experience: (user as any).experience?.toString() || "",
                               bio: (user as any).bio || "",
-                              consultancyType: (user as any).consultancyType || "",
+                              consultancyType: (user as any).consultancyType?._id || (user as any).consultancyType || "",
                               perMinuteRate: (user as any).perMinuteRate?.toString() || "",
                             });
                             setSelectedFile(null);
@@ -727,7 +733,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
         {pagination && pagination.totalPage > 0 && (
           <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
-              Showing <strong className="text-slate-700 dark:text-slate-300">{(pagination.page - 1) * pagination.limit + 1}</strong> to <strong className="text-slate-700 dark:text-slate-300">{Math.min(pagination.page * pagination.limit, pagination.total)}</strong> of <strong className="text-slate-700 dark:text-slate-300">{pagination.total}</strong> results
+              {t("showing")} <strong className="text-slate-700 dark:text-slate-300">{(pagination.page - 1) * pagination.limit + 1}</strong> {t("to")} <strong className="text-slate-700 dark:text-slate-300">{Math.min(pagination.page * pagination.limit, pagination.total)}</strong> {t("of")} <strong className="text-slate-700 dark:text-slate-300">{pagination.total}</strong> {t("results")}
             </div>
             <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0">
               <button
@@ -735,7 +741,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                 disabled={currentPage === 1}
                 className="px-3 py-1.5 text-[13px] font-bold text-slate-500 dark:text-slate-400 border border-transparent rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
               >
-                Previous
+                {t("previous")}
               </button>
               
               {Array.from({ length: pagination.totalPage }).map((_, index) => {
@@ -761,7 +767,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                 disabled={currentPage === pagination.totalPage}
                 className="px-3 py-1.5 text-[13px] font-bold text-slate-500 border border-transparent rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
-                Next
+                {t("next")}
               </button>
             </div>
           </div>
@@ -774,12 +780,12 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto dark:bg-[#1e293b] dark:text-white border-none">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Edit {role === "USER" ? "Customer" : "Consultant"}</DialogTitle>
-            <DialogDescription className="dark:text-slate-400">Update user details below.</DialogDescription>
+            <DialogTitle className="text-xl font-bold">{role === "USER" ? t("edit_customer") : t("edit_consultant")}</DialogTitle>
+            <DialogDescription className="dark:text-slate-400"></DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 mt-2">
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700">Profile Picture</label>
+              <label className="text-sm font-semibold text-slate-700">{t("profile_picture")}</label>
               <div className="flex items-center gap-4">
                  <div 
                    className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 overflow-hidden cursor-pointer"
@@ -793,13 +799,13 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                      <Plus className="w-6 h-6" />
                    )}
                  </div>
-                 <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>Change Image</button>
+                 <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>{t("change_image")}</button>
                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Full Name <span className="text-red-500">*</span></label>
+                <label className="text-sm font-semibold text-slate-700">{t("full_name")} <span className="text-red-500">*</span></label>
                 <Input 
                   placeholder="John Doe" 
                   className="bg-slate-50" 
@@ -809,7 +815,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Email Address <span className="text-red-500">*</span></label>
+                <label className="text-sm font-semibold text-slate-700">{t("email_address")} <span className="text-red-500">*</span></label>
                 <Input 
                   placeholder="john@example.com" 
                   type="email" 
@@ -820,9 +826,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Password</label>
+                <label className="text-sm font-semibold text-slate-700">{t("password")}</label>
                 <Input 
-                  placeholder="Leave blank to keep same" 
+                  placeholder={t("leave_blank")} 
                   type="password" 
                   className="bg-slate-50"
                   value={formData.password}
@@ -830,7 +836,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Phone Number</label>
+                <label className="text-sm font-semibold text-slate-700">{t("phone_number")}</label>
                 <Input 
                   placeholder="+1 (555) 000-0000" 
                   className="bg-slate-50" 
@@ -841,7 +847,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               {role === "CONSULTANT" && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Professional Details</label>
+                    <label className="text-sm font-semibold text-slate-700">{t("professional_details")}</label>
                     <Input 
                       placeholder="E.g. Certified Accountant" 
                       className="bg-slate-50" 
@@ -850,7 +856,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Specialization</label>
+                    <label className="text-sm font-semibold text-slate-700">{t("specialization")}</label>
                     <Input 
                       placeholder="Tax Consulting" 
                       className="bg-slate-50" 
@@ -859,7 +865,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Sub-speciality</label>
+                    <label className="text-sm font-semibold text-slate-700">{t("sub_speciality")}</label>
                     <Input 
                       placeholder="Corporate Tax" 
                       className="bg-slate-50" 
@@ -868,7 +874,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Years of Experience</label>
+                    <label className="text-sm font-semibold text-slate-700">{t("years_of_experience")}</label>
                     <Input 
                       placeholder="10" 
                       type="number" 
@@ -878,18 +884,23 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Consultancy Type <span className="text-red-500">*</span></label>
-                    <select 
-                      className="w-full h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    <label className="text-sm font-semibold text-slate-700">{t("consultancy_type")} <span className="text-red-500">*</span></label>
+                    <Select 
                       required
                       value={formData.consultancyType}
-                      onChange={(e) => setFormData({ ...formData, consultancyType: e.target.value })}
+                      onValueChange={(value) => setFormData({ ...formData, consultancyType: value })}
                     >
-                      <option value="">Select type...</option>
-                      <option value="doctor">Doctor</option>
-                      <option value="lawyer">Lawyer</option>
-                      <option value="advisor">Advisor</option>
-                    </select>
+                      <SelectTrigger className="w-full h-10 px-3 bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none">
+                        <SelectValue placeholder="Select type..." />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999]">
+                        {consultancyTypes.map((type) => (
+                          <SelectItem key={type._id} value={type._id}>
+                            <span className="capitalize">{type.name}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-semibold text-slate-700">Per Minute Rate ($) <span className="text-red-500">*</span></label>
@@ -905,10 +916,6 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                   </div>
                 </>
               )}
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Role</label>
-                <Input value={role} readOnly className="bg-slate-100 cursor-not-allowed font-bold text-slate-500" />
-              </div>
             </div>
             <div className="space-y-1 pt-2">
               <label className="text-sm font-semibold text-slate-700">Bio/About</label>
@@ -951,7 +958,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="sm:max-w-md dark:bg-[#1e293b] dark:text-white border-none">
           <DialogHeader>
-            <DialogTitle>User Profile</DialogTitle>
+            <DialogTitle>{t("user_profile")}</DialogTitle>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4 py-4">
@@ -974,26 +981,26 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               </div>
               <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Role</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">{t("role")}</p>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedUser.role}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Status</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">{t("status")}</p>
                   <span className={cn(
                       "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wide",
                       selectedUser.status.toLowerCase() === "active" && "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
                       selectedUser.status.toLowerCase() === "pending" && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400",
                       selectedUser.status.toLowerCase() === "suspended" && "bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400"
                     )}>
-                      {selectedUser.status}
+                      {t(selectedUser.status.toLowerCase() as any) || selectedUser.status}
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">User ID</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">{t("user_id")}</p>
                   <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{selectedUser._id}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Joined Date</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">{t("joined_date")}</p>
                   <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
@@ -1004,7 +1011,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               onClick={() => setIsViewOpen(false)}
               className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors w-full"
             >
-              Close
+              {t("close")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -1017,10 +1024,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
                <AlertCircle className="w-5 h-5" />
-               Confirm Deletion
+               {t("confirm_deletion")}
             </DialogTitle>
             <DialogDescription className="pt-3">
-              Are you sure you want to delete the user <strong>{selectedUser?.name}</strong>? This action cannot be undone and will permanently remove this user from the system.
+              {t("delete_user_confirm")} <strong>{selectedUser?.name}</strong>? This action cannot be undone and will permanently remove this user from the system.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
@@ -1028,7 +1035,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               onClick={() => setIsDeleteOpen(false)}
               className="px-4 py-2 font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button 
               onClick={handleDeleteConfirm}
@@ -1038,10 +1045,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               {isDeleting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Deleting...
+                  {t("deleting")}
                 </>
               ) : (
-                "Delete User"
+                t("delete_user")
               )}
             </button>
           </div>
@@ -1054,10 +1061,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
                <AlertCircle className="w-5 h-5" />
-               Confirm Bulk Deletion
+               {t("confirm_bulk_deletion")}
             </DialogTitle>
             <DialogDescription className="pt-3">
-              Are you sure you want to delete <strong>{selectedIds.length}</strong> selected users? This action cannot be undone and will permanently remove them from the system.
+              {t("delete_users_confirm", { count: selectedIds.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
@@ -1065,7 +1072,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               onClick={() => setIsBulkDeleteOpen(false)}
               className="px-4 py-2 font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button 
               onClick={handleBulkDeleteConfirm}
@@ -1075,10 +1082,10 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               {isBulkDeleting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Deleting...
+                  {t("deleting")}
                 </>
               ) : (
-                `Delete ${selectedIds.length} Users`
+                t("delete_selected", { count: selectedIds.length })
               )}
             </button>
           </div>

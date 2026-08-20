@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import api from '@/lib/axios';
+import { useTranslations } from 'next-intl';
 
 export function MyRatingCard() {
+  const t = useTranslations('consultant_overview');
   const [ratingData, setRatingData] = useState<any>(null);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function MyRatingCard() {
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full relative">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-slate-900 dark:text-white">My Rating</h3>
+        <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('my_rating')}</h3>
       </div>
 
       <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 flex-1 justify-center py-4">
@@ -86,7 +88,7 @@ export function MyRatingCard() {
             </div>
           </div>
           <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-400 mt-2">
-            {ratingData?.label || "No Ratings Yet"}
+            {ratingData?.label || t('no_ratings_yet')}
           </span>
         </div>
 
@@ -94,7 +96,7 @@ export function MyRatingCard() {
         <div className="flex flex-col gap-3.5 flex-1 w-full max-w-[240px]">
           {breakdown.map((row: any) => (
             <div key={row.stars} className="flex items-center gap-4">
-              <span className="text-[13px] font-semibold text-slate-600 dark:text-slate-400 w-[48px]">{row.stars} {row.stars === 1 ? 'Star' : 'Stars'}</span>
+              <span className="text-[13px] font-semibold text-slate-600 dark:text-slate-400 w-[48px]">{row.stars} {row.stars === 1 ? t('star') : t('stars')}</span>
               <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-amber-400 rounded-full" style={{ width: `${row.percentage}%` }}></div>
               </div>
@@ -113,13 +115,13 @@ export function MyRatingCard() {
               {average > 0 ? average.toFixed(1) : "0.0"}
             </span>
           </div>
-          <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1">Average Rating</span>
+          <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1">{t('average_rating')}</span>
         </div>
         <div className="flex flex-col items-center justify-center flex-1">
           <span className="text-xl font-bold text-slate-900 dark:text-white">
             {ratingData?.totalRatings || 0}
           </span>
-          <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1">Total Reviews</span>
+          <span className="text-[13px] font-medium text-slate-500 dark:text-slate-400 mt-1">{t('total_reviews')}</span>
         </div>
       </div>
     </div>

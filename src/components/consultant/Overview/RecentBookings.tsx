@@ -4,8 +4,11 @@ import { Calendar, ArrowRight, Check, X, User } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { getImageUrl } from '@/lib/utils';
+import { useTranslations, useLocale } from 'next-intl';
 
 export function RecentBookings() {
+  const t = useTranslations('consultant_overview');
+  const locale = useLocale();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -19,8 +22,8 @@ export function RecentBookings() {
           if (data.length > 0) {
             const formatted = data.map((b: any) => {
               const dateObj = new Date(b.scheduledAt);
-              const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-              const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+              const formattedDate = dateObj.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              const formattedTime = dateObj.toLocaleTimeString(locale === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
               
               return {
                 id: b.consultationId || Math.random().toString(),
@@ -29,6 +32,7 @@ export function RecentBookings() {
                   avatar: b.clientImage || '' 
                 },
                 datetime: `${formattedDate} • ${formattedTime}`,
+                rawStatus: b.status ? b.status.toLowerCase() : 'pending',
                 status: b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : 'Pending'
               };
             });
@@ -44,7 +48,7 @@ export function RecentBookings() {
       }
     };
     fetchBookings();
-  }, []);
+  }, [locale]);
 
   const getStatusBadge = (status: string) => {
     const s = status.toLowerCase();
@@ -60,6 +64,13 @@ export function RecentBookings() {
     return 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
   };
 
+  const getTranslatedStatus = (rawStatus: string, fallback: string) => {
+    if (rawStatus === 'upcoming') return t('upcoming');
+    if (rawStatus === 'completed') return t('completed');
+    if (rawStatus === 'cancelled') return t('cancelled');
+    return fallback;
+  };
+
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm w-full h-full flex flex-col transition-colors overflow-hidden">
       <div className="flex items-center justify-between p-6 border-b border-slate-50 dark:border-slate-800/50">
@@ -67,7 +78,7 @@ export function RecentBookings() {
           <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
             <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
           </div>
-          <h3 className="text-base font-bold text-slate-800 dark:text-white">Recent Bookings</h3>
+          <h3 className="text-base font-bold text-slate-800 dark:text-white">{t('recent_bookings')}</h3>
         </div>
       </div>
 
@@ -75,15 +86,15 @@ export function RecentBookings() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800">
-              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">Client</th>
-              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">Date & Time</th>
-              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">Status</th>
+              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">{t('client')}</th>
+              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">{t('date_time')}</th>
+              <th className="px-4 xl:px-6 py-4 text-[13px] font-bold text-slate-800 dark:text-slate-200">{t('status')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
             {loading ? (
               <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-sm text-slate-500">Loading bookings...</td>
+                <td colSpan={3} className="px-6 py-8 text-center text-sm text-slate-500">{t('loading_bookings')}</td>
               </tr>
             ) : bookings.length === 0 ? (
               <tr>
@@ -92,8 +103,8 @@ export function RecentBookings() {
                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
                       <Calendar className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                     </div>
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">No Recent Bookings</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">There are currently no recent bookings to display.</p>
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">{t('no_recent_bookings')}</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('no_recent_bookings_desc')}</p>
                   </div>
                 </td>
               </tr>
@@ -128,7 +139,7 @@ export function RecentBookings() {
                 </td>
                 <td className="px-4 xl:px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-full text-[11px] xl:text-[12px] font-bold border ${getStatusBadge(booking.status)}`}>
-                    {booking.status}
+                    {getTranslatedStatus(booking.rawStatus, booking.status)}
                   </span>
                 </td>
                 </tr>

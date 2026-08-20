@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Clock,
@@ -23,29 +24,30 @@ const getInitials = (name?: string) => {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-const items = [
-  {
-    group: "Consultant Menu", links: [
-      { href: "/consultant/overview", label: "Overview", Icon: LayoutDashboard },
-      { href: "/consultant/availability", label: "Unavailability", Icon: Clock },
-      { href: "/consultant/requests", label: "Requests", Icon: ClipboardList },
-      { href: "/consultant/reports", label: "Reports", Icon: FileText },
-      // { href: "/consultant/earnings", label: "Earnings", Icon: Wallet },
-    ]
-  },
-  {
-    group: "Preferences", links: [
-      { href: "/consultant/settings", label: "Settings", Icon: Settings },
-    ]
-  }
-];
-
 export default function Sidebar({ active }: { active?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
   const current = active ?? pathname ?? "";
   const [profileData, setProfileData] = useState<any>(null);
+  const t = useTranslations("consultant_sidebar");
+
+  const items = [
+    {
+      group: t("consultant_menu"), links: [
+        { href: "/consultant/overview", label: t("overview"), Icon: LayoutDashboard },
+        { href: "/consultant/availability", label: t("unavailability"), Icon: Clock },
+        { href: "/consultant/requests", label: t("requests"), Icon: ClipboardList },
+        { href: "/consultant/reports", label: t("reports"), Icon: FileText },
+        // { href: "/consultant/earnings", label: t("earnings"), Icon: Wallet },
+      ]
+    },
+    {
+      group: t("preferences"), links: [
+        { href: "/consultant/settings", label: t("settings"), Icon: Settings },
+      ]
+    }
+  ];
 
   React.useEffect(() => {
     const fetchProfile = async () => {
@@ -73,8 +75,8 @@ export default function Sidebar({ active }: { active?: string }) {
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold text-slate-900 tracking-tight leading-none">Fixpair</span>
-            <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-[0.2em] mt-1 ml-0.5">Consultant</span>
+            <span className="text-xl font-bold text-slate-900 tracking-tight leading-none">{t("fixpair")}</span>
+            <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-[0.2em] mt-1 ml-0.5">{t("consultant")}</span>
           </div>
         </div>
       </div>
@@ -87,7 +89,7 @@ export default function Sidebar({ active }: { active?: string }) {
             </h4>
             <nav className="space-y-1">
               {group.links.map((item) => {
-                const isActive = current === item.href || current.startsWith(item.href);
+                const isActive = current === item.href || current.startsWith(item.href) || current.startsWith('/de' + item.href);
                 return (
                   <Link
                     key={item.href}

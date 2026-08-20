@@ -6,9 +6,11 @@ import VideoWorkspace from '@/components/call/VideoWorkspace';
 import SessionSidebar from '@/components/call/SessionSidebar';
 import { useRealTimeCall } from '@/hooks/useRealTimeCall';
 import api from '@/lib/axios';
+import { useAuth } from '@/context/AuthContext';
 
 function CallPageContent() {
   const router = useRouter();
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const consultationId = searchParams.get('consultationId');
   const isCallback = searchParams.get('isCallback') === 'true';
@@ -132,13 +134,19 @@ function CallPageContent() {
         // Step 3: Fetch real consultation details (Notes, Client Name, Topic)
         try {
           let consultantRate = 1.0;
+          let consultantName = "Consultant";
+          let consultantImage = null;
+          
           try {
             const profileRes = await api.get('/user/profile');
-            if (profileRes.data?.success && profileRes.data?.data?.perMinuteRate) {
-              consultantRate = Number(profileRes.data.data.perMinuteRate);
+            if (profileRes.data?.success && profileRes.data?.data) {
+              const data = profileRes.data.data;
+              if (data.perMinuteRate) consultantRate = Number(data.perMinuteRate);
+              if (data.name) consultantName = data.name;
+              consultantImage = data.image || data.profileImage || data.avatar || null;
             }
           } catch (profileErr) {
-            console.warn("Failed to fetch profile for rate:", profileErr);
+            console.warn("Failed to fetch profile:", profileErr);
           }
 
           const bookingsRes = await api.get('/consultation/my-bookings');
@@ -161,8 +169,10 @@ function CallPageContent() {
                 clientRole: "Client",
                 clientImage: clientImage,
                 clientInitials: initials,
-                ratePerMinute: bookingRate
-              });
+                ratePerMinute: bookingRate,
+                consultantName,
+                consultantImage
+              } as any); // cast as any for quick property extension
             }
           }
         } catch (bookingErr) {
@@ -205,25 +215,41 @@ function CallPageContent() {
   const hasRemoteUserJoined = remoteUsersList.length > 0;
   const firstRemoteUser = remoteUsersList[0];
 
-  const handleEndCall = useCallback(async () => {
+  const handleEndCall = useCallback(() => {
+    // Fire and forget API calls to avoid UI delay
     if (sessionData?.sessionId) {
-      try {
-        await api.post('/video-session/end', { sessionId: sessionData.sessionId });
-      } catch (error) {
+      api.post('/video-session/end', { sessionId: sessionData.sessionId }).catch(error => {
         console.error("Failed to end session gracefully:", error);
-      }
+      });
     }
     if (consultationId) {
-      try {
-        await api.patch(`/consultation/status/${consultationId}`, { status: 'completed' });
-      } catch (statusErr) {
+      api.patch(`/consultation/status/${consultationId}`, { status: 'completed' }).catch(statusErr => {
         console.error("Failed to update consultation status to completed:", statusErr);
-      }
+      });
     }
+    
+    // Instantly leave call UI
     leaveCall();
-    // Redirect back to dashboard safely
-    router.back();
-  }, [sessionData?.sessionId, consultationId, leaveCall, router]);
+    
+    // Redirect safely to dashboard based on role to avoid hitting login page
+    const dashboardRoute = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' 
+      ? '/admin/overview' 
+      : '/consultant/overview';
+      
+    router.push(dashboardRoute);
+  }, [sessionData?.sessionId, consultationId, leaveCall, router, user]);
+
+  const [hasEverJoined, setHasEverJoined] = useState(false);
+
+  useEffect(() => {
+    if (hasRemoteUserJoined && !hasEverJoined) {
+      setHasEverJoined(true);
+    } else if (!hasRemoteUserJoined && hasEverJoined) {
+      // The remote user has left the call, so end the session automatically for the consultant too
+      console.log("Remote user left. Auto-ending the call...");
+      handleEndCall();
+    }
+  }, [hasRemoteUserJoined, hasEverJoined, handleEndCall]);
 
   if (isLoading) {
     return (
@@ -284,6 +310,8 @@ function CallPageContent() {
         isCallback={isCallback}
         clientName={consultationDetails?.clientName}
         clientImage={consultationDetails?.clientImage}
+        consultantName={(consultationDetails as any)?.consultantName}
+        consultantImage={(consultationDetails as any)?.consultantImage}
       />
 
       {/* 📊 Right Section (Context & Transcription) */}
@@ -293,6 +321,7 @@ function CallPageContent() {
         sessionId={sessionData?.sessionId}
         consultantUid={sessionData?.uid}
         onAutoEnd={handleEndCall}
+        hasRemoteUserJoined={hasRemoteUserJoined}
       />
 
     </div>

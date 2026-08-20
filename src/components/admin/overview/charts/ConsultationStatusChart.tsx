@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import api from '@/lib/axios';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 
 const STATUS_COLORS: Record<string, string> = {
   'COMPLETED': '#22c55e',
@@ -16,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function ConsultationStatusChart() {
+  const t = useTranslations("admin_overview");
   const [data, setData] = useState<{name: string, value: number, color: string}[]>([]);
   const [total, setTotal] = useState(0);
   const [months, setMonths] = useState(6);
@@ -32,8 +34,9 @@ export function ConsultationStatusChart() {
           
           const formatted = (distribution.items || []).map((item: any) => {
             const statusKey = (item.status || '').toUpperCase();
+            const translationKey = `status_${statusKey.toLowerCase()}`;
             return {
-              name: statusKey.charAt(0) + statusKey.slice(1).toLowerCase(),
+              name: t(translationKey as any) || (statusKey.charAt(0) + statusKey.slice(1).toLowerCase()),
               value: item.count || 0,
               color: STATUS_COLORS[statusKey] || '#8b5cf6'
             };
@@ -47,19 +50,19 @@ export function ConsultationStatusChart() {
       }
     };
     fetchStatus();
-  }, [months]);
+  }, [months, t]);
 
   return (
     <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col h-full transition-colors relative">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Consultation Status</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t("consultation_status")}</h3>
         <Select value={months.toString()} onValueChange={(val) => setMonths(Number(val))}>
           <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-slate-200 dark:border-slate-800 bg-transparent text-slate-500 dark:text-slate-400 focus:ring-0 focus:ring-offset-0">
-            <SelectValue placeholder="Select timeframe" />
+            <SelectValue placeholder={t("select_timeframe")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="6">Last 6 Months</SelectItem>
-            <SelectItem value="12">Last Year</SelectItem>
+            <SelectItem value="6">{t("last_6_months")}</SelectItem>
+            <SelectItem value="12">{t("last_year")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -96,7 +99,7 @@ export function ConsultationStatusChart() {
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-lg font-bold text-slate-900 dark:text-white">{total.toLocaleString()}</span>
-            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</span>
+            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t("total")}</span>
           </div>
         </div>
 

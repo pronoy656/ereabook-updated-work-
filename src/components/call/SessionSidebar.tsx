@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Clock, DollarSign, FileText, AlignLeft } from 'lucide-react';
 import { useTranscription } from '@/hooks/useTranscription';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getImageUrl } from '@/lib/utils';
 
 interface SessionSidebarProps {
   consultationDetails?: {
@@ -19,9 +21,10 @@ interface SessionSidebarProps {
   sessionId?: string | null;
   consultantUid?: number;
   onAutoEnd?: () => void;
+  hasRemoteUserJoined?: boolean;
 }
 
-export default function SessionSidebar({ consultationDetails, consultationId, sessionId, consultantUid, onAutoEnd }: SessionSidebarProps = {}) {
+export default function SessionSidebar({ consultationDetails, consultationId, sessionId, consultantUid, onAutoEnd, hasRemoteUserJoined = false }: SessionSidebarProps = {}) {
   const [durationSec, setDurationSec] = useState(0);
 
   // Live transcription via Socket.io — Agora RTT bot transcribes both participants
@@ -44,13 +47,15 @@ export default function SessionSidebar({ consultationDetails, consultationId, se
   };
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
-  // Billing & Timer Logic
+  // Billing & Timer Logic: Only tick when the remote user (client) has joined
   useEffect(() => {
+    if (!hasRemoteUserJoined) return;
+
     const timer = setInterval(() => {
       setDurationSec(prev => prev + 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [hasRemoteUserJoined]);
 
   // Format MM:SS
   const formatTime = (totalSeconds: number) => {
@@ -75,13 +80,12 @@ export default function SessionSidebar({ consultationDetails, consultationId, se
        {/* 1. Profile Panel */}
        <div className="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
          <div className="flex items-center gap-4">
-           <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200 overflow-hidden shrink-0 shadow-inner">
-             {details.clientImage ? (
-               <img src={details.clientImage} alt={details.clientName} className="w-full h-full object-cover" />
-             ) : (
-               details.clientInitials
-             )}
-           </div>
+           <Avatar className="w-12 h-12 border border-blue-200 shadow-inner shrink-0">
+             <AvatarImage src={getImageUrl(details.clientImage || "") || undefined} alt={details.clientName || "Client"} className="object-cover" />
+             <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
+               {details.clientInitials || (details.clientName ? details.clientName.charAt(0).toUpperCase() : "C")}
+             </AvatarFallback>
+           </Avatar>
            <div>
              <h2 className="text-lg font-bold text-slate-900">{details.clientName}</h2>
              <span className="text-[13px] font-medium text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-sm">
@@ -110,6 +114,12 @@ export default function SessionSidebar({ consultationDetails, consultationId, se
             </div>
          </div>
        </div>
+       {!hasRemoteUserJoined && (
+         <div className="bg-amber-50 border-b border-amber-100 px-4 py-2.5 text-center text-[12px] font-semibold text-amber-700 flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+            Waiting for client to join... Timer will start when client enters.
+         </div>
+       )}
 
        <div className="flex flex-col flex-1 overflow-hidden">
 

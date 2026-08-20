@@ -4,6 +4,8 @@ import Link from "next/link";
 import { PropsWithChildren } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type AuthLayoutShellProps = PropsWithChildren<{
   title?: string;
@@ -13,8 +15,15 @@ type AuthLayoutShellProps = PropsWithChildren<{
 export default function AuthLayoutShell({
   children,
 }: AuthLayoutShellProps) {
+  const t = useTranslations("auth");
+
   return (
-    <div className="min-h-screen grid md:grid-cols-2 bg-white text-black">
+    <div className="min-h-screen grid md:grid-cols-2 bg-white text-black relative">
+      {/* Top right language switcher */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       {/* Left Side: Hero Image and Text */}
       <div className="relative hidden md:flex flex-col p-12 lg:p-16 overflow-hidden">
         <Image
@@ -50,22 +59,22 @@ export default function AuthLayoutShell({
         {/* Text Content at bottom left */}
         <div className="relative z-10 w-full mb-4">
           <h1 className="text-[32px] lg:text-[40px] font-bold text-white mb-10 leading-[1.1] tracking-tight">
-            Join Germany's leading <br />
-            consultation marketplace.
+            {t("hero_title_1")} <br />
+            {t("hero_title_2")}
           </h1>
           
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-[18px] h-[18px] text-orange-400 stroke-[2.5]" />
-              <span className="text-white font-medium text-[15px] tracking-wide">Set your own hourly rates</span>
+              <span className="text-white font-medium text-[15px] tracking-wide">{t("hero_bullet_1")}</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-[18px] h-[18px] text-orange-400 stroke-[2.5]" />
-              <span className="text-white font-medium text-[15px] tracking-wide">Access thousands of potential clients</span>
+              <span className="text-white font-medium text-[15px] tracking-wide">{t("hero_bullet_2")}</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-[18px] h-[18px] text-orange-400 stroke-[2.5]" />
-              <span className="text-white font-medium text-[15px] tracking-wide">Handle scheduling and billing in one place</span>
+              <span className="text-white font-medium text-[15px] tracking-wide">{t("hero_bullet_3")}</span>
             </div>
           </div>
         </div>

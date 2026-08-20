@@ -29,7 +29,8 @@ const mockData = [
   { date: 'Jun 19', upcoming: 34, completed: 26, cancelled: 5 },
 ];
 
-export function ConsultantPerformanceChart() {
+export function ConsultantPerformanceChart({ data }: { data?: any[] }) {
+  const chartData = data && data.length > 0 ? data : mockData;
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-[400px]">
       <div className="flex items-center justify-between mb-6">
@@ -65,7 +66,7 @@ export function ConsultantPerformanceChart() {
 
       <div className="flex-1 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={mockData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>
               <linearGradient id="colorUpcoming" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#a855f7" stopOpacity={0.25}/>

@@ -4,6 +4,7 @@ import { Star, Loader2, User } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { getImageUrl } from '@/lib/utils';
+import { useTranslations } from "next-intl";
 
 interface TopConsultant {
   consultantId: string;
@@ -15,6 +16,7 @@ interface TopConsultant {
 }
 
 export function TopConsultantsTable() {
+  const t = useTranslations("admin_overview");
   const [data, setData] = useState<TopConsultant[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -39,7 +41,7 @@ export function TopConsultantsTable() {
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full transition-colors relative">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Top Consultants</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t("top_consultants")}</h3>
       </div>
 
       <div className="overflow-x-auto relative min-h-[200px]">
@@ -52,10 +54,10 @@ export function TopConsultantsTable() {
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800">
               <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 w-8">#</th>
-              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500">Consultant</th>
-              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-center">Sessions</th>
-              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-center">Rating</th>
-              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-right">Earnings</th>
+              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500">{t("consultant")}</th>
+              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-center">{t("sessions")}</th>
+              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-center">{t("rating")}</th>
+              <th className="pb-3 text-xs font-semibold text-slate-400 dark:text-slate-500 text-right">{t("earnings")}</th>
             </tr>
           </thead>
           <tbody>
@@ -76,7 +78,7 @@ export function TopConsultantsTable() {
                         <User className="w-4 h-4" />
                       </div>
                     )}
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{consultant.name || "Unknown Consultant"}</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{consultant.name || t("unknown_consultant")}</span>
                   </div>
                 </td>
                 <td className="py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 text-center">{consultant.totalSessions || 0}</td>

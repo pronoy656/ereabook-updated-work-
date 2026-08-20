@@ -7,6 +7,7 @@ import CustomAvailability from './CustomAvailability';
 import api from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export interface TimeSlot {
   start: string;
@@ -14,6 +15,7 @@ export interface TimeSlot {
 }
 
 export default function AvailabilityManagement() {
+  const t = useTranslations('consultant_availability');
   const [availabilityData, setAvailabilityData] = useState<Record<string, TimeSlot[]>>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -80,11 +82,11 @@ export default function AvailabilityManagement() {
 
       const response = await api.post('/consultation/unavailability', { slots });
       console.log("Save Response:", response.data);
-      toast.success("Unavailability updated successfully!");
+      toast.success(t('unavailability_saved_success'));
     } catch (error: any) {
       console.error("Error saving availability:", error);
       console.error("Error response data:", error.response?.data);
-      toast.error(error.response?.data?.message || "Failed to save unavailability.");
+      toast.error(error.response?.data?.message || t('unavailability_saved_error'));
     } finally {
       setSaving(false);
     }
@@ -96,8 +98,8 @@ export default function AvailabilityManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Unavailability Management</h1>
-          <p className="text-slate-500 text-[15px]">Set your unavailable hours and manage your calendar.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('unavailability_management')}</h1>
+          <p className="text-slate-500 text-[15px]">{t('subtitle')}</p>
         </div>
       </div>
 
@@ -106,7 +108,7 @@ export default function AvailabilityManagement() {
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center space-y-4">
             <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-            <p className="text-slate-500 font-medium text-sm">Loading unavailability...</p>
+            <p className="text-slate-500 font-medium text-sm">{t('loading_unavailability')}</p>
           </div>
         ) : (
           <Tabs defaultValue="recurring" className="w-full flex-1">
@@ -116,13 +118,13 @@ export default function AvailabilityManagement() {
                   value="recurring"
                   className="flex-1 py-4 text-[13px] font-bold transition-none rounded-none border-b-2 border-transparent data-[state=active]:text-blue-600 data-[state=active]:border-blue-600 data-[state=active]:shadow-none data-[state=inactive]:text-slate-400 hover:text-slate-700"
                 >
-                  Recurring Hours
+                  {t('recurring_hours')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="custom"
                   className="flex-1 py-4 text-[13px] font-bold transition-none rounded-none border-b-2 border-transparent data-[state=active]:text-blue-600 data-[state=active]:border-blue-600 data-[state=active]:shadow-none data-[state=inactive]:text-slate-400 hover:text-slate-700"
                 >
-                  Custom Unavailability (Date Specific)
+                  {t('custom_unavailability')}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -140,7 +142,7 @@ export default function AvailabilityManagement() {
                     disabled={saving}
                     className="bg-[#FE6D2C] hover:bg-[#E85D20] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-sm shadow-[#FE6D2C]/20 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {saving ? "Saving..." : "Save Changes"}
+                    {saving ? t('saving') : t('save_changes')}
                   </button>
                 </div>
               </TabsContent>

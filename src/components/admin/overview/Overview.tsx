@@ -12,6 +12,7 @@ import { RecentActivityList } from "./RecentActivityList";
 import { RecentConsultationsTable } from "./RecentConsultationsTable";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Metric {
   value: number;
@@ -30,9 +31,17 @@ interface SummaryData {
 }
 
 export default function Overview() {
+  const t = useTranslations("admin_overview");
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("This Month");
+
+  const filterMap: Record<string, string> = {
+    "Today": t("today"),
+    "This Week": t("this_week"),
+    "This Month": t("this_month"),
+    "All Time": t("all_time")
+  };
 
   const fetchSummary = async () => {
     try {
@@ -45,7 +54,7 @@ export default function Overview() {
         setData(response.data.data);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to fetch dashboard summary");
+      toast.error(error.response?.data?.message || t("fetch_error"));
     } finally {
       setLoading(false);
     }
@@ -66,15 +75,15 @@ export default function Overview() {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors shadow-sm">
                 <CalendarIcon className="w-4 h-4 text-slate-500" />
-                {dateFilter}
+                {filterMap[dateFilter] || dateFilter}
                 <ChevronDown className="w-4 h-4 text-slate-400 ml-1" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px]">
-              <DropdownMenuItem onClick={() => setDateFilter("Today")}>Today</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDateFilter("This Week")}>This Week</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDateFilter("This Month")}>This Month</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDateFilter("All Time")}>All Time</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("Today")}>{t("today")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("This Week")}>{t("this_week")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("This Month")}>{t("this_month")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateFilter("All Time")}>{t("all_time")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -87,44 +96,44 @@ export default function Overview() {
           {/* Row 1: Primary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <PrimaryStatCard
-              label="Total Users"
+              label={t("total_users")}
               value={loading || !data ? "..." : (data?.totalUsers?.value || 0).toLocaleString()}
               trend={loading || !data ? "..." : `${data?.totalUsers?.changePct || 0}%`}
               trendDirection={data?.totalUsers?.direction === 'down' ? 'down' : 'up'}
-              trendText="from last 30 days"
+              trendText={t("from_last_30_days")}
               Icon={Users}
               iconBgColor="bg-purple-600"
               iconColor="text-white"
               loading={loading}
             />
             <PrimaryStatCard
-              label="Total Consultants"
+              label={t("total_consultants")}
               value={loading || !data ? "..." : (data?.totalConsultants?.value || 0).toLocaleString()}
               trend={loading || !data ? "..." : `${data?.totalConsultants?.changePct || 0}%`}
               trendDirection={data?.totalConsultants?.direction === 'down' ? 'down' : 'up'}
-              trendText="from last 30 days"
+              trendText={t("from_last_30_days")}
               Icon={UserCheck}
               iconBgColor="bg-emerald-500"
               iconColor="text-white"
               loading={loading}
             />
             <PrimaryStatCard
-              label="Total Consultations"
+              label={t("total_consultations")}
               value={loading || !data ? "..." : (data?.totalConsultations?.value || 0).toLocaleString()}
               trend={loading || !data ? "..." : `${data?.totalConsultations?.changePct || 0}%`}
               trendDirection={data?.totalConsultations?.direction === 'down' ? 'down' : 'up'}
-              trendText="from last 30 days"
+              trendText={t("from_last_30_days")}
               Icon={Activity}
               iconBgColor="bg-blue-500"
               iconColor="text-white"
               loading={loading}
             />
             <PrimaryStatCard
-              label="Total Revenue"
+              label={t("total_revenue")}
               value={loading || !data ? "..." : `$${(data?.totalRevenue?.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               trend={loading || !data ? "..." : `${data?.totalRevenue?.changePct || 0}%`}
               trendDirection={data?.totalRevenue?.direction === 'down' ? 'down' : 'up'}
-              trendText="from last 30 days"
+              trendText={t("from_last_30_days")}
               Icon={Euro}
               iconBgColor="bg-amber-500"
               iconColor="text-white"
@@ -135,33 +144,33 @@ export default function Overview() {
           {/* Row 2: Secondary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <PrimaryStatCard 
-              label="Completed Consultations" 
+              label={t("completed_consultations")} 
               value={loading || !data ? "..." : (data?.completedConsultations?.value || 0).toLocaleString()} 
               trend={loading || !data ? "..." : `${data?.completedConsultations?.changePct || 0}%`} 
               trendDirection={data?.completedConsultations?.direction === 'down' ? 'down' : 'up'} 
-              trendText="from last 30 days" 
+              trendText={t("from_last_30_days")} 
               Icon={CheckCircle2} 
               iconBgColor="bg-emerald-500" 
               iconColor="text-white" 
               loading={loading}
             />
             <PrimaryStatCard 
-              label="Cancelled Consultations" 
+              label={t("cancelled_consultations")} 
               value={loading || !data ? "..." : (data?.cancelledConsultations?.value || 0).toLocaleString()} 
               trend={loading || !data ? "..." : `${data?.cancelledConsultations?.changePct || 0}%`} 
               trendDirection={data?.cancelledConsultations?.direction === 'down' ? 'down' : 'up'} 
-              trendText="from last 30 days" 
+              trendText={t("from_last_30_days")} 
               Icon={XCircle} 
               iconBgColor="bg-rose-500" 
               iconColor="text-white" 
               loading={loading}
             />
             <PrimaryStatCard 
-              label="Average Rating" 
+              label={t("average_rating")} 
               value={loading || !data ? "..." : (data?.averageRating?.value || 0).toFixed(1)} 
               trend={loading || !data ? "..." : `${data?.averageRating?.changePct || 0}%`} 
               trendDirection={data?.averageRating?.direction === 'down' ? 'down' : 'up'} 
-              trendText="from last 30 days" 
+              trendText={t("from_last_30_days")} 
               Icon={Star} 
               iconBgColor="bg-amber-500" 
               iconColor="text-white" 

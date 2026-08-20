@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Activity, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { getImageUrl, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import { io, Socket } from "socket.io-client";
@@ -23,11 +23,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface Session {
   id: string; // Video Session ID
   consultationId: string;
+  channelName?: string;
   consultant: string;
   consultantAvatar?: string;
   customer: string;
   customerAvatar?: string;
-  cost: number | string;
+  duration?: string | number | null;
   startedAt: string;
   status: string;
   pdfUrl?: string; // If invoice exists
@@ -43,12 +44,37 @@ function getSocketUrl(): string {
   }
 }
 
+function formatLiveDuration(startedAt?: string, durationVal?: number | string | null, nowTimestamp: number = Date.now()) {
+  if (startedAt) {
+    const start = new Date(startedAt).getTime();
+    if (!isNaN(start)) {
+      const diffMs = Math.max(0, nowTimestamp - start);
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+
+      if (hours > 0) {
+        return `${hours}h ${mins}m ${secs}s`;
+      }
+      return `${mins}m ${secs}s`;
+    }
+  }
+
+  if (durationVal) {
+    return `${durationVal} mins`;
+  }
+
+  return "0m 0s";
+}
+
 
 export default function LiveMonitoringTable() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCount, setActiveCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [now, setNow] = useState(Date.now());
   
   // Force End Modal State
   const [endModalOpen, setEndModalOpen] = useState(false);
@@ -57,13 +83,34 @@ export default function LiveMonitoringTable() {
   const [otherReason, setOtherReason] = useState("");
   const [isEnding, setIsEnding] = useState(false);
 
+  // Live timer tick for duration calculation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const fetchActiveConsultations = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/active-consultations");
+      const response = await api.get("/video-session?status=ongoing");
       if (response.data.success) {
-        setSessions(response.data.data.sessions || []);
-        setActiveCount(response.data.data.count || 0);
+        const rawSessions = Array.isArray(response.data.data) ? response.data.data : [];
+        const formattedSessions: Session[] = rawSessions.map((item: any) => ({
+          id: item._id,
+          consultationId: item.consultation?._id || item._id,
+          channelName: item.channelName,
+          consultant: item.consultant?.name || "Unknown",
+          consultantAvatar: getImageUrl(item.consultant?.image || item.consultant?.avatar),
+          customer: item.user?.name || item.customer?.name || "Unknown",
+          customerAvatar: getImageUrl(item.user?.image || item.user?.avatar || item.customer?.image || item.customer?.avatar),
+          duration: item.duration ?? item.consultation?.duration,
+          startedAt: item.startedAt || item.createdAt,
+          status: item.status || "ongoing",
+        }));
+        setSessions(formattedSessions);
+        setActiveCount(response.data.pagination?.total ?? formattedSessions.length);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to fetch live monitoring data");
@@ -193,10 +240,9 @@ export default function LiveMonitoringTable() {
           <table className="w-full text-left whitespace-nowrap">
             <thead>
               <tr className="bg-[#FAFAFA] border-b border-slate-100">
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">SESSION ID</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CONSULTANT</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CUSTOMER</th>
-                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">CURRENT COST</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">DURATION</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">STARTED AT</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">SESSION</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">ACTIONS</th>
@@ -221,9 +267,6 @@ export default function LiveMonitoringTable() {
               ) : filteredSessions.map((session) => (
                 <tr key={session.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="text-[13px] font-semibold text-slate-500">{session.id}</span>
-                  </td>
-                  <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={session.consultantAvatar} alt={session.consultant || "Consultant"} />
@@ -242,7 +285,9 @@ export default function LiveMonitoringTable() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-[14px] font-bold text-slate-800">{session.cost}</span>
+                    <span className="text-[13px] font-bold text-blue-600 font-mono bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
+                      {formatLiveDuration(session.startedAt, session.duration, now)}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-[13px] font-medium text-slate-500">

@@ -4,8 +4,11 @@ import { Star, User, MessageSquare } from 'lucide-react';
 import api from '@/lib/axios';
 import { getImageUrl } from '@/lib/utils';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function RecentFeedback() {
+  const t = useTranslations('consultant_overview');
+  const locale = useLocale();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -33,20 +36,20 @@ export default function RecentFeedback() {
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 w-full h-full flex flex-col transition-colors">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Recent Feedback</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t('recent_feedback')}</h3>
       </div>
 
       <div className="flex flex-col gap-0 w-full flex-1 min-h-0">
         <div className="flex flex-col w-full gap-1 overflow-y-auto custom-scrollbar h-full pr-2">
           {loading ? (
-             <div className="py-8 text-center text-sm text-slate-500">Loading feedback...</div>
+             <div className="py-8 text-center text-sm text-slate-500">{t('loading_feedback')}</div>
           ) : reviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 h-full text-center">
               <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-3 border border-slate-100 dark:border-slate-700">
                 <MessageSquare className="w-6 h-6 text-slate-400 dark:text-slate-500" />
               </div>
-              <h4 className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-1">No feedback yet</h4>
-              <p className="text-[13px] text-slate-500 dark:text-slate-400 max-w-[220px]">When clients leave a review for your consultations, they will appear here.</p>
+              <h4 className="text-[14px] font-bold text-slate-700 dark:text-slate-300 mb-1">{t('no_feedback_yet')}</h4>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400 max-w-[220px]">{t('no_feedback_desc')}</p>
             </div>
           ) : (
             reviews.map((review, index) => {
@@ -55,7 +58,7 @@ export default function RecentFeedback() {
               const userImage = getImageUrl(review.clientImage || review.user?.image || review.user?.avatar || null);
               const rating = review.rating || 5;
               const dateStr = review.createdAt 
-                ? new Date(review.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+                ? new Date(review.createdAt).toLocaleString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
                 : 'Unknown Date';
 
               // Fallback topic badge for now since API might not have it
@@ -97,7 +100,7 @@ export default function RecentFeedback() {
                     </div>
                     
                     <p className="text-slate-600 dark:text-slate-300 text-[13px] leading-relaxed">
-                       {review.comment || "Great experience! John is knowledgeable and easy to work with."}
+                       {review.comment || t('default_comment')}
                     </p>
                   </div>
 

@@ -25,23 +25,26 @@ const getActivityConfig = (type: string) => {
   }
 };
 
-function timeAgo(dateString: string) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) return `${diffInSeconds} sec ago`;
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours} hr ago`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays} days ago`;
-}
+import { useTranslations } from "next-intl";
 
 export function RecentActivityList() {
+  const t = useTranslations("admin_overview");
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  function timeAgo(dateString: string) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} ${t("sec_ago")}`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} ${t("min_ago")}`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} ${t("hr_ago")}`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} ${t("days_ago")}`;
+  }
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -63,7 +66,7 @@ export function RecentActivityList() {
   return (
     <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full transition-colors relative">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-slate-800 dark:text-white">Recent Activity</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white">{t("recent_activity")}</h3>
       </div>
 
       <div className="flex flex-col gap-5 mt-2 relative min-h-[200px] flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -75,7 +78,7 @@ export function RecentActivityList() {
         {!loading && activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 h-full min-h-[150px] gap-2">
              <Activity className="w-8 h-8 opacity-50" />
-             <span className="text-sm font-medium">No recent activities</span>
+             <span className="text-sm font-medium">{t("no_recent_activities")}</span>
           </div>
         ) : activities.map((activity) => {
           const config = getActivityConfig(activity.type);

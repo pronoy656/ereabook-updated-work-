@@ -7,7 +7,8 @@ import {
   ChevronDown,
   User,
   Settings,
-  Search
+  Search,
+  HelpCircle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +33,9 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/utils";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import NotificationDropdown from "@/components/NotificationDropdown";
+import { useTranslations } from "next-intl";
 
 const getInitials = (name?: string) => {
   if (!name) return 'C';
@@ -44,6 +48,7 @@ export default function TopBar() {
   const [isAvailable, setIsAvailable] = useState(user?.activeStatus ?? true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
+  const t = useTranslations("consultant_topbar");
 
   useEffect(() => {
     if (user && user.activeStatus !== undefined) {
@@ -100,6 +105,8 @@ export default function TopBar() {
     setShowConfirmDialog(false);
   };
 
+  const displayUser = profileData || user;
+
   return (
     <div className="flex items-center justify-between px-10 py-4 border-b border-slate-100 bg-white sticky top-0 z-10 h-20">
       <div className="flex items-center gap-8">
@@ -120,63 +127,23 @@ export default function TopBar() {
           />
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="relative p-2 hover:bg-slate-50 rounded-full transition-colors cursor-pointer outline-none group">
-              <Bell className="w-5 h-5 text-slate-500 group-hover:text-emerald-600 transition-colors" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-2 mt-2 rounded-[20px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border-slate-100">
-            <div className="flex items-center justify-between px-3 py-2">
-              <h3 className="font-bold text-slate-800">Notifications</h3>
-              <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">2 New</span>
-            </div>
-            <DropdownMenuSeparator className="bg-slate-50 mx-2" />
-            <div className="max-h-[350px] overflow-y-auto p-1 flex flex-col gap-0.5">
-              {[
-                { id: 1, title: "New Callback Request", message: "You have a new callback request from John Doe.", time: "2m ago", isNew: true },
-                { id: 2, title: "Booking Confirmed", message: "Your 3:00 PM booking with Sarah has been confirmed.", time: "1h ago", isNew: true },
-                { id: 3, title: "Payment Received", message: "Payment for your recent consultation was successful.", time: "2h ago", isNew: false },
-                { id: 4, title: "Reminder", message: "Don't forget to update your availability for next week.", time: "1d ago", isNew: false },
-                { id: 5, title: "System Update", message: "The platform will undergo maintenance this Sunday.", time: "2d ago", isNew: false },
-              ].map(notification => (
-                <DropdownMenuItem key={notification.id} className={`flex flex-col items-start gap-1.5 p-3 rounded-xl cursor-pointer transition-all outline-none ${notification.isNew ? 'bg-blue-50/50 hover:bg-blue-50 focus:bg-blue-50' : 'hover:bg-slate-50 focus:bg-slate-50'}`}>
-                  <div className="flex items-center justify-between w-full gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm font-semibold text-slate-800 truncate">{notification.title}</span>
-                      {notification.isNew && (
-                        <span className="text-[9px] font-bold text-white bg-blue-500 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">New</span>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-medium shrink-0">{notification.time}</span>
-                  </div>
-                  <p className={`text-xs line-clamp-2 ${notification.isNew ? 'text-slate-600' : 'text-slate-500'}`}>{notification.message}</p>
-                </DropdownMenuItem>
-              ))}
-            </div>
-            <DropdownMenuSeparator className="bg-slate-50 mx-2" />
-            <div className="p-1">
-              <Button variant="ghost" className="w-full text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl py-2 h-auto">
-                Mark all as read
-              </Button>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationDropdown iconColorClass="text-slate-500 hover:text-emerald-600" />
+
+        <LanguageSwitcher />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 pl-2 pr-1 py-1 hover:bg-slate-50 rounded-2xl transition-all outline-none border border-transparent hover:border-slate-100 group cursor-pointer lg:min-w-[180px]">
               <div className="hidden lg:block text-right">
-                <div className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{profileData?.name || user?.name || "Consultant"}</div>
-                <div className="text-[11px] text-slate-400 font-medium">{profileData?.email || user?.email || ""}</div>
+                <div className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{displayUser?.name || "Consultant"}</div>
+                <div className="text-[11px] text-slate-400 font-medium capitalize">{displayUser?.role || "Consultant"}</div>
               </div>
               <div className="relative">
-                {profileData?.image || user?.image ? (
-                  <img src={getImageUrl(profileData?.image || user?.image)} alt={profileData?.name || user?.name || "Avatar"} className="h-10 w-10 rounded-xl object-cover" />
+                {displayUser?.image ? (
+                  <img src={getImageUrl(displayUser.image)} alt={displayUser.name || "Avatar"} className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-emerald-600/20" />
                 ) : (
                   <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-500/20">
-                    {getInitials(profileData?.name || user?.name)}
+                    {getInitials(displayUser?.name)}
                   </div>
                 )}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></div>
@@ -188,18 +155,18 @@ export default function TopBar() {
           <DropdownMenuContent align="end" className="w-64 p-2 mt-2 rounded-[20px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border-slate-100">
             <DropdownMenuLabel className="px-3 py-4">
               <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Account Information</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("account_info")}</p>
                 <div className="flex items-center gap-3 mt-1">
-                  {profileData?.image || user?.image ? (
-                    <img src={getImageUrl(profileData?.image || user?.image)} alt={profileData?.name || user?.name || "Avatar"} className="h-10 w-10 rounded-lg object-cover" />
+                  {displayUser?.image ? (
+                    <img src={getImageUrl(displayUser.image)} alt={displayUser.name || "Avatar"} className="h-10 w-10 rounded-lg object-cover" />
                   ) : (
                     <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 text-sm font-bold">
-                      {getInitials(profileData?.name || user?.name)}
+                      {getInitials(displayUser?.name)}
                     </div>
                   )}
                   <div>
-                    <p className="text-sm font-bold text-slate-800">{profileData?.name || user?.name || "Consultant"}</p>
-                    <p className="text-[11px] text-slate-400 capitalize">{profileData?.role || user?.role || "Consultant"}</p>
+                    <p className="text-sm font-bold text-slate-800">{displayUser?.name || "Consultant"}</p>
+                    <p className="text-[11px] text-slate-400">{displayUser?.email}</p>
                   </div>
                 </div>
               </div>
@@ -213,7 +180,15 @@ export default function TopBar() {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all"
               >
                 <User className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
-                <span className="font-medium">My Profile</span>
+                <span className="font-medium">{t("my_profile")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all">
+                <Settings className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
+                <span className="font-medium">{t("settings")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all">
+                <HelpCircle className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
+                <span className="font-medium">{t("help_support")}</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
@@ -224,7 +199,7 @@ export default function TopBar() {
                 <div className="p-1.5 bg-rose-50 rounded-lg group-focus:bg-rose-100">
                   <LogOut className="w-4 h-4" />
                 </div>
-                <span className="font-bold">Log out</span>
+                <span className="font-bold">{t("logout")}</span>
               </DropdownMenuItem>
             </div>
           </DropdownMenuContent>

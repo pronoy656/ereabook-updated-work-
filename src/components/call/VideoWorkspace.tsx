@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ICameraVideoTrack, IRemoteVideoTrack, IRemoteAudioTrack } from 'agora-rtc-sdk-ng';
 import { Mic, MicOff, VideoIcon, VideoOff, PhoneOff } from 'lucide-react';
+import { getImageUrl } from '@/lib/utils';
 
 interface VideoWorkspaceProps {
   localVideoTrack: ICameraVideoTrack | null;
@@ -20,6 +21,8 @@ interface VideoWorkspaceProps {
   isCallback?: boolean;
   clientName?: string;
   clientImage?: string | null;
+  consultantName?: string;
+  consultantImage?: string | null;
 }
 
 export default function VideoWorkspace({
@@ -37,8 +40,12 @@ export default function VideoWorkspace({
   remoteUsers = {},
   isCallback = false,
   clientName = "Client",
-  clientImage = null
+  clientImage = null,
+  consultantName = "Consultant",
+  consultantImage = null
 }: VideoWorkspaceProps) {
+  const [clientImgError, setClientImgError] = useState(false);
+  const [consultantImgError, setConsultantImgError] = useState(false);
   
   const localVideoRef = useCallback((node: HTMLDivElement | null) => {
     console.log("🎥 localVideoRef callback invoked. Node present:", !!node, "Track present:", !!localVideoTrack);
@@ -140,8 +147,13 @@ export default function VideoWorkspace({
            isCallback ? (
              <div className="text-slate-200 font-medium flex flex-col items-center gap-6 z-40 bg-slate-900/90 absolute inset-0 justify-center backdrop-blur-sm animate-in fade-in duration-500">
                <div className="relative">
-                 {clientImage ? (
-                   <img src={clientImage} alt={clientName} className="w-24 h-24 rounded-full border-4 border-slate-700 object-cover shadow-2xl" />
+                 {!clientImgError && clientImage ? (
+                   <img 
+                     src={getImageUrl(clientImage) || clientImage} 
+                     alt={clientName} 
+                     className="w-24 h-24 rounded-full border-4 border-slate-700 object-cover shadow-2xl" 
+                     onError={() => setClientImgError(true)}
+                   />
                  ) : (
                    <div className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center border-4 border-slate-700 text-3xl font-bold text-slate-300 shadow-2xl">
                      {clientName ? clientName.charAt(0).toUpperCase() : '?'}
@@ -163,18 +175,27 @@ export default function VideoWorkspace({
              </div>
            )
         ) : !remoteVideoTrack ? (
-           <div className="text-slate-400 font-medium flex flex-col items-center gap-4 text-center max-w-sm animate-in fade-in zoom-in-95 duration-300">
-             <div className="w-24 h-24 rounded-full bg-slate-800/80 border border-slate-700/65 flex items-center justify-center shadow-2xl relative">
-               <VideoOff className="w-10 h-10 text-slate-400" />
-               <span className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900" title="Connected" />
+           <div className="text-slate-400 font-medium flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-300">
+             <div className="relative">
+               {!clientImgError && clientImage ? (
+                 <img 
+                   src={getImageUrl(clientImage) || clientImage} 
+                   alt={clientName} 
+                   className="w-32 h-32 rounded-full border-4 border-slate-700 object-cover shadow-2xl"
+                   onError={() => setClientImgError(true)}
+                 />
+               ) : (
+                 <div className="w-32 h-32 rounded-full bg-slate-800 flex items-center justify-center border-4 border-slate-700 text-4xl font-bold text-slate-300 shadow-2xl">
+                   {clientName ? clientName.charAt(0).toUpperCase() : '?'}
+                 </div>
+               )}
+               <div className="absolute bottom-1 right-2 w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center shadow-lg" title="Camera is off">
+                 <VideoOff className="w-4 h-4 text-slate-400" />
+               </div>
              </div>
-             <div>
-               <p className="text-slate-200 font-bold text-lg leading-snug">
-                 Participant has turned off their camera
-               </p>
-               <p className="text-slate-500 text-xs mt-1">
-                 You can still communicate via voice chat
-               </p>
+             <div className="text-center space-y-1">
+               <h2 className="text-2xl font-bold text-white">{clientName}</h2>
+               <p className="text-slate-400 text-sm">Camera is off</p>
              </div>
            </div>
         ) : (
@@ -190,8 +211,22 @@ export default function VideoWorkspace({
       {/* Local Video Container (PIP) */}
       <div className="absolute top-8 right-8 w-48 aspect-[3/4] bg-black rounded-xl overflow-hidden shadow-2xl border-2 border-slate-700/50 z-20">
          {isVideoOff ? (
-            <div className="w-full h-full flex items-center justify-center bg-slate-800">
-               <VideoOff className="w-8 h-8 text-slate-500" />
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 relative">
+               {!consultantImgError && consultantImage ? (
+                 <img 
+                   src={getImageUrl(consultantImage) || consultantImage} 
+                   alt={consultantName} 
+                   className="w-20 h-20 rounded-full border-2 border-slate-600 object-cover shadow-lg"
+                   onError={() => setConsultantImgError(true)}
+                 />
+               ) : (
+                 <div className="w-20 h-20 rounded-full bg-slate-700 flex items-center justify-center border-2 border-slate-600 text-3xl font-bold text-slate-300 shadow-lg">
+                   {consultantName ? consultantName.charAt(0).toUpperCase() : 'C'}
+                 </div>
+               )}
+               <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg" title="Camera is off">
+                 <VideoOff className="w-3 h-3 text-slate-400" />
+               </div>
             </div>
          ) : (
             <div ref={localVideoRef} className="w-full h-full object-cover"></div>

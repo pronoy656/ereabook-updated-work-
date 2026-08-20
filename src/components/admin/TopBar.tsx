@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import {
   Bell,
   LogOut,
@@ -25,11 +26,15 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 export default function TopBar() {
   const router = useRouter();
   const { logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const t = useTranslations("admin_topbar");
+
   return (
     <div className="flex items-center justify-between px-10 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1e293b] sticky top-0 z-10 h-20 transition-colors">
       <div className="flex items-center gap-8">
@@ -37,6 +42,12 @@ export default function TopBar() {
       </div>
 
       <div className="flex items-center gap-4">
+        
+        {/* Notifications */}
+        <NotificationDropdown iconColorClass="text-slate-600 dark:text-slate-300 hover:text-blue-600" />
+
+        {/* Language Switcher */}
+        <LanguageSwitcher />
 
         {/* Theme Toggle */}
         <Button 
@@ -56,7 +67,7 @@ export default function TopBar() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 pl-2 pr-1 py-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all outline-none border border-transparent hover:border-slate-100 dark:hover:border-slate-700 group cursor-pointer lg:min-w-[180px]">
               <div className="hidden lg:block text-right">
-                <div className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Super Admin</div>
+                <div className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{t("super_admin")}</div>
                 <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">admin@fixpair.com</div>
               </div>
               <div className="relative">
@@ -72,14 +83,14 @@ export default function TopBar() {
           <DropdownMenuContent align="end" className="w-64 p-2 mt-2 rounded-[20px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border-slate-100 dark:border-slate-800 dark:bg-[#1e293b]">
             <DropdownMenuLabel className="px-3 py-4">
               <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account Information</p>
+                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("account_info")}</p>
                 <div className="flex items-center gap-3 mt-1">
                   <div className="h-10 w-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 text-sm font-bold">
                     SA
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Super Admin</p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">Owner Account</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{t("super_admin")}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">{t("owner_account")}</p>
                   </div>
                 </div>
               </div>
@@ -93,7 +104,7 @@ export default function TopBar() {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-blue-50 dark:focus:bg-blue-900/30 focus:text-blue-600 dark:focus:text-blue-400 group transition-all"
               >
                 <User className="w-4 h-4 text-slate-400 dark:text-slate-500 group-focus:text-blue-600 dark:group-focus:text-blue-400" />
-                <span className="font-medium dark:text-slate-300 group-focus:dark:text-blue-400">My Profile</span>
+                <span className="font-medium dark:text-slate-300 group-focus:dark:text-blue-400">{t("my_profile")}</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
@@ -104,7 +115,7 @@ export default function TopBar() {
                 <div className="p-1.5 bg-rose-50 dark:bg-rose-950/30 rounded-lg group-focus:bg-rose-100 dark:group-focus:bg-rose-900/50">
                   <LogOut className="w-4 h-4" />
                 </div>
-                <span className="font-bold">Log out</span>
+                <span className="font-bold">{t("logout")}</span>
               </DropdownMenuItem>
             </div>
           </DropdownMenuContent>
