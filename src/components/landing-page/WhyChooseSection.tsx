@@ -5,7 +5,7 @@ import { ShieldCheck, Lock, Users, Zap, MessageSquare } from 'lucide-react';
 
 export default function WhyChooseSection() {
   return (
-    <section className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-20 relative z-10">
+    <section id="why-choose-us" className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-20 relative z-10 scroll-mt-20">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-12 lg:gap-16">
         
         {/* Left Content */}

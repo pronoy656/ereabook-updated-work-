@@ -6,7 +6,7 @@ export default function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
 
   return (
-    <section className="relative w-full bg-white py-20 lg:py-28 z-10 overflow-hidden">
+    <section id="pricing" className="relative w-full bg-white py-20 lg:py-28 z-10 overflow-hidden scroll-mt-20">
       <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
         
         {/* Header */}

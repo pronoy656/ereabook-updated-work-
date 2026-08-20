@@ -8,7 +8,7 @@ export default function HeroSection() {
   return (
     <>
       {/* Hero Section */}
-      <main className="container mx-auto px-6 sm:px-8 lg:px-12 pt-12 sm:pt-16 lg:pt-24 pb-16 relative z-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-14">
+      <main className="container mx-auto px-6 sm:px-8 lg:px-12 pt-24 sm:pt-28 lg:pt-32 pb-16 relative z-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-14">
         
         {/* Left Column (Content) */}
         <div className="space-y-6 lg:w-[48%] flex flex-col items-start relative z-20">

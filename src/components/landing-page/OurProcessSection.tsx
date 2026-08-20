@@ -5,7 +5,7 @@ import { Sparkles, Search, Calendar, MessageSquare, Mic, Video, PhoneOff, FileTe
 
 export default function OurProcessSection() {
   return (
-    <section className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-24 relative z-10">
+    <section id="how-it-works" className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-24 relative z-10 scroll-mt-20">
 
       <div className="flex flex-col lg:flex-row items-start justify-between gap-8 lg:gap-6">
 

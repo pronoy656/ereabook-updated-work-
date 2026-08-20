@@ -5,7 +5,7 @@ import { Download, CalendarDays, Video, MessageSquare, FileText, Star, Search, S
 
 export default function MobileAppSection() {
   return (
-    <section className="container mx-auto px-6 sm:px-8 lg:px-12 py-12 lg:py-16 relative z-10">
+    <section id="mobile-app" className="container mx-auto px-6 sm:px-8 lg:px-12 py-12 lg:py-16 relative z-10 scroll-mt-20">
       <div className="bg-gradient-to-b from-[#F4F8FE] via-[#FAFCFF] to-[#EFF6FF] border border-blue-100/80 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.07)] rounded-[3rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden">
         
         {/* Soft Background Ambient Lights */}

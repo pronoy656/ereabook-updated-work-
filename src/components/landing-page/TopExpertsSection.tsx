@@ -87,7 +87,7 @@ export default function TopExpertsSection() {
   const prevExpert = () => setExpertIdx(p => (p <= 0 ? maxExpertIdx : p - 1));
 
   return (
-    <section className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-24 relative z-10">
+    <section id="experts" className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-24 relative z-10 scroll-mt-20">
       
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">

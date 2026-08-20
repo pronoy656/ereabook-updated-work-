@@ -37,7 +37,7 @@ export default function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number>(0);
 
   return (
-    <section className="relative w-full bg-white py-24 z-10 overflow-hidden">
+    <section id="faq" className="relative w-full bg-white py-24 z-10 overflow-hidden scroll-mt-20">
       <div className="container mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
         
         {/* Header */}

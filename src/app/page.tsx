@@ -15,12 +15,12 @@ import Footer from "@/components/landing-page/Footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden relative">
+    <div className="min-h-screen bg-white font-sans text-slate-900 relative">
       <Navbar />
       <HeroSection />
       <WhyChooseSection />
       <TestimonialsSection />
-      {/* <OurProcessSection /> */}
+      <OurProcessSection />
       <ServicesSection />
       <TopExpertsSection />
       <MobileAppSection />

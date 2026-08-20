@@ -90,7 +90,7 @@ export default function TestimonialsSection() {
   };
 
   return (
-    <section className="container mx-auto px-6 sm:px-8 lg:px-12 py-10 relative z-10">
+    <section id="testimonials" className="container mx-auto px-6 sm:px-8 lg:px-12 py-10 relative z-10 scroll-mt-20">
       <div className="bg-gradient-to-br from-[#F6F8FF] via-[#F8FAFF] to-[#FAF8FF] rounded-[2.5rem] p-8 sm:p-10 lg:p-12 relative shadow-sm border border-indigo-100/80">
         
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10 lg:gap-14">
