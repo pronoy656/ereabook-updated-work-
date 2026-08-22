@@ -10,7 +10,6 @@ import TopExpertsSection from "@/components/landing-page/TopExpertsSection";
 import MobileAppSection from "@/components/landing-page/MobileAppSection";
 import PricingSection from "@/components/landing-page/PricingSection";
 import FaqSection from "@/components/landing-page/FaqSection";
-import CtaSection from "@/components/landing-page/CtaSection";
 import Footer from "@/components/landing-page/Footer";
 
 export default function Home() {
@@ -20,13 +19,12 @@ export default function Home() {
       <HeroSection />
       <WhyChooseSection />
       <TestimonialsSection />
-      <OurProcessSection />
+      {/* <OurProcessSection /> */}
       <ServicesSection />
       <TopExpertsSection />
       <MobileAppSection />
       <PricingSection />
       <FaqSection />
-      <CtaSection />
       <Footer />
     </div>
   );

@@ -239,61 +239,6 @@ export default function PricingSection() {
 
         </div>
 
-        {/* Bottom Trust & Guarantee Bar */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 lg:p-8 border border-slate-200/80 shadow-[0_15px_35px_-10px_rgba(15,23,42,0.05)] flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-4 max-w-5xl mx-auto">
-          
-          {/* Guarantee 1 */}
-          <div className="flex items-center gap-3.5 flex-1 justify-center lg:justify-start px-2">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5" strokeWidth={2} />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">Secure & Private</span>
-              <span className="text-xs font-medium text-slate-500">Your data is 100% safe &amp; encrypted.</span>
-            </div>
-          </div>
-
-          <div className="w-full h-px lg:w-px lg:h-10 bg-slate-200/80" />
-
-          {/* Guarantee 2 */}
-          <div className="flex items-center gap-3.5 flex-1 justify-center px-2">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" strokeWidth={2} />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">Cancel Anytime</span>
-              <span className="text-xs font-medium text-slate-500">No hidden fees. Cancel anytime.</span>
-            </div>
-          </div>
-
-          <div className="w-full h-px lg:w-px lg:h-10 bg-slate-200/80" />
-
-          {/* Guarantee 3 */}
-          <div className="flex items-center gap-3.5 flex-1 justify-center px-2">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-              <Award className="w-5 h-5" strokeWidth={2} />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">Money-Back Guarantee</span>
-              <span className="text-xs font-medium text-slate-500">7-day full refund policy.</span>
-            </div>
-          </div>
-
-          <div className="w-full h-px lg:w-px lg:h-10 bg-slate-200/80" />
-
-          {/* Guarantee 4 */}
-          <div className="flex items-center gap-3.5 flex-1 justify-center lg:justify-end px-2">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center shrink-0">
-              <Headphones className="w-5 h-5" strokeWidth={2} />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-sm font-bold text-slate-900 leading-tight mb-0.5">24/7 Priority Support</span>
-              <span className="text-xs font-medium text-slate-500">We're here around the clock.</span>
-            </div>
-          </div>
-
-        </div>
-
       </div>
     </section>
   );

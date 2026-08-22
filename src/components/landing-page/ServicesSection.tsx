@@ -2,7 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { LayoutGrid, Scale, Briefcase, Users, TrendingUp, DollarSign, ChevronRight, CheckCircle2, ArrowRight, Heart, ClipboardList } from 'lucide-react';
+import { 
+  LayoutGrid, Scale, Briefcase, Users, TrendingUp, DollarSign, ChevronRight, 
+  CheckCircle2, ArrowRight, Heart, ClipboardList, Zap, ShieldCheck, Award, 
+  MessageSquare, Sparkles, FileText, LineChart, Home, Clock
+} from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories', icon: LayoutGrid },
@@ -13,80 +17,325 @@ const CATEGORIES = [
   { id: 'finance', label: 'Finance', icon: DollarSign },
 ];
 
-const SERVICES = [
-  {
-    id: "legal",
-    category: "legal",
-    title: "Legal Advice",
-    description: "Get clarity on your legal matters from experienced lawyers.",
-    image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
-    icon: Scale,
-    iconColor: "text-purple-600",
-    checkColor: "text-purple-500",
-    shadowHover: "hover:shadow-[0_15px_35px_rgba(147,51,234,0.08)] hover:border-purple-200",
-    btnColor: "text-purple-600",
-    bulletPoints: ["Contracts & Agreements", "Family Law", "Property Disputes"]
-  },
-  {
-    id: "business",
-    category: "business",
-    title: "Business Consulting",
-    description: "Grow your business with strategic advice from industry experts.",
-    image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&auto=format&fit=crop&q=80",
-    icon: Briefcase,
-    iconColor: "text-emerald-600",
-    checkColor: "text-emerald-500",
-    shadowHover: "hover:shadow-[0_15px_35px_rgba(16,185,129,0.08)] hover:border-emerald-200",
-    btnColor: "text-emerald-600",
-    bulletPoints: ["Business Strategy", "Operations Management", "Startup Guidance"]
-  },
-  {
-    id: "relationships",
-    category: "relationships",
-    title: "Relationship Advice",
-    description: "Improve relationships and build stronger connections.",
-    image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=600&auto=format&fit=crop&q=80",
-    icon: Heart,
-    iconColor: "text-amber-500",
-    checkColor: "text-amber-500",
-    shadowHover: "hover:shadow-[0_15px_35px_rgba(245,158,11,0.08)] hover:border-amber-200",
-    btnColor: "text-amber-600",
-    bulletPoints: ["Marriage Counseling", "Communication Issues", "Relationship Coaching"]
-  },
-  {
-    id: "career",
-    category: "career",
-    title: "Career Coaching",
-    description: "Advance your career with personalized coaching and guidance.",
-    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80",
-    icon: TrendingUp,
-    iconColor: "text-blue-600",
-    checkColor: "text-blue-600",
-    shadowHover: "hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200",
-    btnColor: "text-blue-600",
-    bulletPoints: ["Career Planning", "Resume & LinkedIn Review", "Interview Preparation"]
-  },
-  {
-    id: "finance",
-    category: "finance",
-    title: "Finance & Wealth",
-    description: "Optimize your finances and build long-term wealth stability.",
-    image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
-    icon: DollarSign,
-    iconColor: "text-indigo-600",
-    checkColor: "text-indigo-500",
-    shadowHover: "hover:shadow-[0_15px_35px_rgba(99,102,241,0.08)] hover:border-indigo-200",
-    btnColor: "text-indigo-600",
-    bulletPoints: ["Tax & Investment Planning", "Wealth Management", "Retirement Strategy"]
-  }
-];
+// Mapping every category to exactly 4 distinct, high-quality service cards
+const SERVICES_BY_CATEGORY: Record<string, {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  icon: any;
+  iconColor: string;
+  checkColor: string;
+  shadowHover: string;
+  btnColor: string;
+  bulletPoints: string[];
+}[]> = {
+  all: [
+    {
+      id: "legal-1",
+      title: "Legal Advice",
+      description: "Get clarity on your legal matters from experienced lawyers.",
+      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
+      icon: Scale,
+      iconColor: "text-purple-600",
+      checkColor: "text-purple-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(147,51,234,0.08)] hover:border-purple-200",
+      btnColor: "text-purple-600",
+      bulletPoints: ["Contracts & Agreements", "Family Law", "Property Disputes"]
+    },
+    {
+      id: "business-1",
+      title: "Business Consulting",
+      description: "Grow your business with strategic advice from industry experts.",
+      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&auto=format&fit=crop&q=80",
+      icon: Briefcase,
+      iconColor: "text-emerald-600",
+      checkColor: "text-emerald-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(16,185,129,0.08)] hover:border-emerald-200",
+      btnColor: "text-emerald-600",
+      bulletPoints: ["Business Strategy", "Operations Management", "Startup Guidance"]
+    },
+    {
+      id: "relationships-1",
+      title: "Relationship Advice",
+      description: "Improve relationships and build stronger connections.",
+      image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=600&auto=format&fit=crop&q=80",
+      icon: Heart,
+      iconColor: "text-amber-500",
+      checkColor: "text-amber-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(245,158,11,0.08)] hover:border-amber-200",
+      btnColor: "text-amber-600",
+      bulletPoints: ["Marriage Counseling", "Communication Issues", "Relationship Coaching"]
+    },
+    {
+      id: "career-1",
+      title: "Career Coaching",
+      description: "Advance your career with personalized coaching and guidance.",
+      image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80",
+      icon: TrendingUp,
+      iconColor: "text-blue-600",
+      checkColor: "text-blue-600",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200",
+      btnColor: "text-blue-600",
+      bulletPoints: ["Career Planning", "Resume & LinkedIn Review", "Interview Preparation"]
+    }
+  ],
+  legal: [
+    {
+      id: "legal-1",
+      title: "Contract Review & Audit",
+      description: "Get clarity on contracts, vendor NDAs, and commercial agreements.",
+      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80",
+      icon: Scale,
+      iconColor: "text-purple-600",
+      checkColor: "text-purple-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(147,51,234,0.08)] hover:border-purple-200",
+      btnColor: "text-purple-600",
+      bulletPoints: ["Contract Review", "NDA Verification", "Vendor Terms"]
+    },
+    {
+      id: "legal-2",
+      title: "Corporate & Business Law",
+      description: "Legal advice on company formation, shareholder agreements, and structure.",
+      image: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80",
+      icon: Briefcase,
+      iconColor: "text-purple-600",
+      checkColor: "text-purple-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(147,51,234,0.08)] hover:border-purple-200",
+      btnColor: "text-purple-600",
+      bulletPoints: ["Incorporation Advice", "Shareholder Terms", "Equity Structure"]
+    },
+    {
+      id: "legal-3",
+      title: "Family & Property Disputes",
+      description: "Expert legal guidance for family matters, estate planning, and property.",
+      image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&auto=format&fit=crop&q=80",
+      icon: ShieldCheck,
+      iconColor: "text-purple-600",
+      checkColor: "text-purple-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(147,51,234,0.08)] hover:border-purple-200",
+      btnColor: "text-purple-600",
+      bulletPoints: ["Family Law Advice", "Estate Planning", "Property Disputes"]
+    },
+    {
+      id: "legal-4",
+      title: "IP & Trademark Protection",
+      description: "Protect your commercial brand, copyrights, and intellectual property.",
+      image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=80",
+      icon: Award,
+      iconColor: "text-purple-600",
+      checkColor: "text-purple-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(147,51,234,0.08)] hover:border-purple-200",
+      btnColor: "text-purple-600",
+      bulletPoints: ["Trademark Filing", "Copyright Protection", "IP Licensing"]
+    }
+  ],
+  business: [
+    {
+      id: "business-1",
+      title: "Business Strategy & Scaling",
+      description: "Grow your business with strategic advice from industry leaders.",
+      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&auto=format&fit=crop&q=80",
+      icon: Briefcase,
+      iconColor: "text-emerald-600",
+      checkColor: "text-emerald-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(16,185,129,0.08)] hover:border-emerald-200",
+      btnColor: "text-emerald-600",
+      bulletPoints: ["Business Strategy", "Market Expansion", "Revenue Scaling"]
+    },
+    {
+      id: "business-2",
+      title: "Operations & Workflows",
+      description: "Optimize company operations, team workflows, and cost efficiency.",
+      image: "https://images.unsplash.com/photo-1542744801-30d20d43a6d7?w=600&auto=format&fit=crop&q=80",
+      icon: Zap,
+      iconColor: "text-emerald-600",
+      checkColor: "text-emerald-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(16,185,129,0.08)] hover:border-emerald-200",
+      btnColor: "text-emerald-600",
+      bulletPoints: ["Process Optimization", "Cost Reduction", "Workflow Audits"]
+    },
+    {
+      id: "business-3",
+      title: "Startup & Pitch Guidance",
+      description: "Prepare your startup for investor pitch deck reviews and fundraising.",
+      image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&auto=format&fit=crop&q=80",
+      icon: TrendingUp,
+      iconColor: "text-emerald-600",
+      checkColor: "text-emerald-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(16,185,129,0.08)] hover:border-emerald-200",
+      btnColor: "text-emerald-600",
+      bulletPoints: ["Pitch Deck Review", "Fundraising Strategy", "Investor Readiness"]
+    },
+    {
+      id: "business-4",
+      title: "Leadership & Coaching",
+      description: "Develop executive presence and build high-performing teams.",
+      image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&auto=format&fit=crop&q=80",
+      icon: Users,
+      iconColor: "text-emerald-600",
+      checkColor: "text-emerald-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(16,185,129,0.08)] hover:border-emerald-200",
+      btnColor: "text-emerald-600",
+      bulletPoints: ["Executive Coaching", "Team Motivation", "Delegation Mastery"]
+    }
+  ],
+  relationships: [
+    {
+      id: "rel-1",
+      title: "Couples & Marriage Advice",
+      description: "Rebuild trust, emotional intimacy, and healthy communication.",
+      image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=600&auto=format&fit=crop&q=80",
+      icon: Heart,
+      iconColor: "text-amber-500",
+      checkColor: "text-amber-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(245,158,11,0.08)] hover:border-amber-200",
+      btnColor: "text-amber-600",
+      bulletPoints: ["Marriage Counseling", "Trust Rebuilding", "Emotional Connection"]
+    },
+    {
+      id: "rel-2",
+      title: "Communication & Conflict",
+      description: "Break toxic communication loops and resolve deep-seated conflict.",
+      image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&auto=format&fit=crop&q=80",
+      icon: MessageSquare,
+      iconColor: "text-amber-500",
+      checkColor: "text-amber-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(245,158,11,0.08)] hover:border-amber-200",
+      btnColor: "text-amber-600",
+      bulletPoints: ["Active Listening", "Conflict Resolution", "Healthy Boundaries"]
+    },
+    {
+      id: "rel-3",
+      title: "Family & Parent Dynamics",
+      description: "Strengthen family bonds and navigate interpersonal challenges.",
+      image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80",
+      icon: Users,
+      iconColor: "text-amber-500",
+      checkColor: "text-amber-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(245,158,11,0.08)] hover:border-amber-200",
+      btnColor: "text-amber-600",
+      bulletPoints: ["Pre-Marital Coaching", "Family Dynamics", "Parenting Advice"]
+    },
+    {
+      id: "rel-4",
+      title: "Self-Worth & Dating",
+      description: "Build confidence, dating clarity, and personal relationship goals.",
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&auto=format&fit=crop&q=80",
+      icon: Sparkles,
+      iconColor: "text-amber-500",
+      checkColor: "text-amber-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(245,158,11,0.08)] hover:border-amber-200",
+      btnColor: "text-amber-600",
+      bulletPoints: ["Dating Confidence", "Self-Worth Coaching", "Relationship Goals"]
+    }
+  ],
+  career: [
+    {
+      id: "career-1",
+      title: "Executive Career Planning",
+      description: "Advance your career path with personalized strategic coaching.",
+      image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80",
+      icon: TrendingUp,
+      iconColor: "text-blue-600",
+      checkColor: "text-blue-600",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200",
+      btnColor: "text-blue-600",
+      bulletPoints: ["Career Roadmap", "Promotion Planning", "Skill Mapping"]
+    },
+    {
+      id: "career-2",
+      title: "Resume & LinkedIn Review",
+      description: "Transform your CV and LinkedIn profile to attract executive recruiters.",
+      image: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80",
+      icon: FileText,
+      iconColor: "text-blue-600",
+      checkColor: "text-blue-600",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200",
+      btnColor: "text-blue-600",
+      bulletPoints: ["Resume Optimization", "LinkedIn Branding", "Cover Letter Review"]
+    },
+    {
+      id: "career-3",
+      title: "Mock Interview Practice",
+      description: "Master high-stakes job interviews with realistic mock sessions.",
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop&q=80",
+      icon: MessageSquare,
+      iconColor: "text-blue-600",
+      checkColor: "text-blue-600",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200",
+      btnColor: "text-blue-600",
+      bulletPoints: ["Behavioral Interviews", "Technical Q&A", "Confidence Building"]
+    },
+    {
+      id: "career-4",
+      title: "Salary & Offer Negotiation",
+      description: "Maximize your job offer compensation, equity, and perks package.",
+      image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80",
+      icon: DollarSign,
+      iconColor: "text-blue-600",
+      checkColor: "text-blue-600",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200",
+      btnColor: "text-blue-600",
+      bulletPoints: ["Salary Benchmarking", "Equity Negotiation", "Relocation Perks"]
+    }
+  ],
+  finance: [
+    {
+      id: "fin-1",
+      title: "Personal Tax & Wealth Plan",
+      description: "Optimize tax efficiency, savings allocations, and wealth management.",
+      image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80",
+      icon: DollarSign,
+      iconColor: "text-indigo-600",
+      checkColor: "text-indigo-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(99,102,241,0.08)] hover:border-indigo-200",
+      btnColor: "text-indigo-600",
+      bulletPoints: ["Tax Optimization", "Savings Strategy", "Wealth Management"]
+    },
+    {
+      id: "fin-2",
+      title: "Investment Portfolio Strategy",
+      description: "Build a balanced investment portfolio across stocks, ETFs, and assets.",
+      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&auto=format&fit=crop&q=80",
+      icon: LineChart,
+      iconColor: "text-indigo-600",
+      checkColor: "text-indigo-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(99,102,241,0.08)] hover:border-indigo-200",
+      btnColor: "text-indigo-600",
+      bulletPoints: ["ETF & Stock Allocation", "Risk Assessment", "Portfolio Balancing"]
+    },
+    {
+      id: "fin-3",
+      title: "Retirement & FIRE Strategy",
+      description: "Plan early retirement, pension structures, and passive income streams.",
+      image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
+      icon: Clock,
+      iconColor: "text-indigo-600",
+      checkColor: "text-indigo-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(99,102,241,0.08)] hover:border-indigo-200",
+      btnColor: "text-indigo-600",
+      bulletPoints: ["Pension Audit", "FIRE Movement Plan", "Passive Income"]
+    },
+    {
+      id: "fin-4",
+      title: "Real Estate & Asset Advisory",
+      description: "Strategic guidance on real estate acquisitions and property investments.",
+      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&auto=format&fit=crop&q=80",
+      icon: Home,
+      iconColor: "text-indigo-600",
+      checkColor: "text-indigo-500",
+      shadowHover: "hover:shadow-[0_15px_35px_rgba(99,102,241,0.08)] hover:border-indigo-200",
+      btnColor: "text-indigo-600",
+      bulletPoints: ["Mortgage Advice", "Property ROI", "Real Estate Tax"]
+    }
+  ]
+};
 
 export default function ServicesSection() {
   const [activeCategory, setActiveCategory] = useState('all');
 
-  const filteredServices = activeCategory === 'all'
-    ? SERVICES
-    : SERVICES.filter(service => service.category === activeCategory);
+  const currentServices = SERVICES_BY_CATEGORY[activeCategory] || SERVICES_BY_CATEGORY['all'];
 
   const cycleCategory = () => {
     const currentIndex = CATEGORIES.findIndex(cat => cat.id === activeCategory);
@@ -151,10 +400,10 @@ export default function ServicesSection() {
         </div>
       </div>
 
-      {/* Service Cards Grid */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${filteredServices.length >= 4 ? 'lg:grid-cols-4' : filteredServices.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-6 transition-all duration-300`}>
+      {/* Consistent 4-Card Service Grid for Every Category */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 transition-all duration-300">
         
-        {filteredServices.map((service) => {
+        {currentServices.map((service) => {
           const Icon = service.icon;
 
           return (
@@ -186,7 +435,7 @@ export default function ServicesSection() {
                     {service.description}
                   </p>
 
-                  <div className="space-y-2 mb-6">
+                  <div className="space-y-2">
                     {service.bulletPoints.map((point, i) => (
                       <div key={i} className="flex items-center gap-2 text-[12px] font-medium text-slate-600">
                         <CheckCircle2 className={`w-4 h-4 ${service.checkColor} shrink-0`} />
@@ -195,10 +444,6 @@ export default function ServicesSection() {
                     ))}
                   </div>
                 </div>
-
-                <Link href="#" className={`inline-flex items-center gap-1.5 text-sm font-bold ${service.btnColor} group-hover:gap-2.5 transition-all`}>
-                  Find an Expert <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
               </div>
             </div>
           );
@@ -215,18 +460,20 @@ export default function ServicesSection() {
           <div className="flex flex-col">
             <h4 className="text-[17px] font-bold text-slate-900 mb-0.5">Can&apos;t find what you need?</h4>
             <p className="text-sm text-slate-600">
-              Our experts cover 100+ areas of expertise. Tell us what you&apos;re looking for.
+              Our experts cover 100+ areas of expertise on the Fixpair Mobile App.
             </p>
           </div>
         </div>
 
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)] shrink-0 flex items-center gap-2 cursor-pointer">
-          Request Custom Consultation
+        <Link 
+          href="/#mobile-app"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)] shrink-0 flex items-center gap-2 cursor-pointer"
+        >
+          Download Mobile App
           <ArrowRight className="w-4 h-4" />
-        </button>
+        </Link>
       </div>
 
     </section>
   );
 }
-

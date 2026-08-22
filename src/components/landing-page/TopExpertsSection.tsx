@@ -188,7 +188,10 @@ export default function TopExpertsSection() {
                 </div>
 
                 {/* Bottom Link */}
-                <Link href="#" className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 group-hover:gap-2.5 transition-all pt-2 border-t border-slate-100">
+                <Link 
+                  href={`/experts/${expert.id}`} 
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 group-hover:gap-2.5 transition-all pt-2 border-t border-slate-100 cursor-pointer"
+                >
                   View Profile <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>

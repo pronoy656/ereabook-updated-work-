@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { ArrowRight, Menu, X } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { label: 'How It Works', href: '#how-it-works' },
   { label: 'Why Us', href: '#why-choose-us' },
+  { label: 'How It Works', href: '#how-it-works' },
   { label: 'Services', href: '#services' },
   { label: 'Experts', href: '#experts' },
   { label: 'Pricing', href: '#pricing' },
@@ -155,11 +155,11 @@ export default function Navbar() {
             Sign In
           </Link>
           <a
-            href="#experts"
-            onClick={(e) => scrollToSection(e, '#experts')}
+            href="#mobile-app"
+            onClick={(e) => scrollToSection(e, '#mobile-app')}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/35 hover:-translate-y-0.5 cursor-pointer"
           >
-            Book a Consultation
+            Get Mobile App
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -208,11 +208,11 @@ export default function Navbar() {
               Sign In
             </Link>
             <a
-              href="#experts"
-              onClick={(e) => scrollToSection(e, '#experts')}
+              href="#mobile-app"
+              onClick={(e) => scrollToSection(e, '#mobile-app')}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md shadow-blue-600/25"
             >
-              Book a Consultation
+              Get Mobile App
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>
