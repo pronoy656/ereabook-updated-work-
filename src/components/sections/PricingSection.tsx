@@ -1,9 +1,11 @@
 'use client';
 import React, { useState } from 'react';
 import { Tag, Send, Crown, Briefcase, CheckCircle2, ShieldCheck, Clock, Award, Headphones, Sparkles, ArrowRight } from 'lucide-react';
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
 
 export default function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
+  const { t } = useLandingLanguage();
 
   return (
     <section id="pricing" className="relative w-full bg-white py-20 lg:py-28 z-10 overflow-hidden scroll-mt-20">
@@ -13,15 +15,15 @@ export default function PricingSection() {
         <div className="flex flex-col items-center text-center mb-14">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold tracking-wider uppercase mb-5 shadow-sm">
             <Tag className="w-3.5 h-3.5" />
-            SIMPLE, TRANSPARENT PRICING
+            {t('pricing.badge')}
           </div>
           
           <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4 leading-tight">
-            Choose the Plan That's <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">Right for You</span>
+            {t('pricing.title_1')} <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">{t('pricing.title_2')}</span>
           </h2>
           
           <p className="text-base text-slate-600 font-medium max-w-lg leading-relaxed">
-            Flexible plans for individuals and businesses. Start free and upgrade anytime as you grow.
+            {t('pricing.subtitle')}
           </p>
         </div>
 

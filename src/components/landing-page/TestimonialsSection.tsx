@@ -3,7 +3,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react';
 
-const TESTIMONIALS = [
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
+
+const TESTIMONIALS_EN = [
   {
     text: "I needed legal guidance for my business and found an expert who made the whole process smooth and stress-free.",
     name: "Michael T.", role: "Business Owner", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
@@ -26,7 +28,28 @@ const TESTIMONIALS = [
   }
 ];
 
-const INFINITE_TESTIMONIALS = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS];
+const TESTIMONIALS_DE = [
+  {
+    text: "Ich brauchte rechtliche Beratung für mein Unternehmen und habe einen Experten gefunden, der den gesamten Prozess reibungslos gestaltet hat.",
+    name: "Michael T.", role: "Unternehmer", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+  },
+  {
+    text: "Der Berater hat mir geholfen, meinen Karriereweg zu klären und einen Plan zu erstellen, der tatsächlich funktioniert. Sehr zu empfehlen!",
+    name: "Sarah L.", role: "Marketing Managerin", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+  },
+  {
+    text: "Schnelle Buchung, hervorragende Kommunikation und sehr hilfreiche Ratschläge. Ich werde Fixpair definitiv wieder nutzen.",
+    name: "David R.", role: "Startup-Gründer", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80"
+  },
+  {
+    text: "Sehr professioneller Service. Die Experten sind gründlich geprüft und meine Fragen wurden effizient beantwortet.",
+    name: "Emma W.", role: "Freiberufliche Designerin", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"
+  },
+  {
+    text: "Hervorragende Erfahrung! Die Plattform ist intuitiv und das Finden des richtigen Experten war kinderleicht.",
+    name: "James K.", role: "Tech Lead", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80"
+  }
+];
 
 export default function TestimonialsSection() {
   const [testIdx, setTestIdx] = useState(0);
@@ -34,18 +57,22 @@ export default function TestimonialsSection() {
   const [isTestDragging, setIsTestDragging] = useState(false);
   const [testStartX, setTestStartX] = useState(0);
   const [testScrollLeft, setTestScrollLeft] = useState(0);
+  const { locale, t } = useLandingLanguage();
+
+  const testimonialsList = locale === 'de' ? TESTIMONIALS_DE : TESTIMONIALS_EN;
+  const infiniteTestimonials = [...testimonialsList, ...testimonialsList, ...testimonialsList];
 
   // Initialize scroll position in the middle set for infinite looping
   useEffect(() => {
     if (testSliderRef.current) {
-      testSliderRef.current.scrollLeft = TESTIMONIALS.length * 344;
+      testSliderRef.current.scrollLeft = testimonialsList.length * 344;
     }
-  }, []);
+  }, [testimonialsList]);
 
   const handleTestScroll = () => {
     if (!testSliderRef.current) return;
     const scrollLeft = testSliderRef.current.scrollLeft;
-    const singleSetWidth = TESTIMONIALS.length * 344;
+    const singleSetWidth = testimonialsList.length * 344;
 
     // Seamless infinite reset when reaching start or end set
     if (scrollLeft >= singleSetWidth * 2) {
@@ -55,7 +82,7 @@ export default function TestimonialsSection() {
     }
 
     const calculatedIndex = Math.round((testSliderRef.current.scrollLeft % singleSetWidth) / 344);
-    const clampedIndex = (calculatedIndex + TESTIMONIALS.length) % TESTIMONIALS.length;
+    const clampedIndex = (calculatedIndex + testimonialsList.length) % testimonialsList.length;
     setTestIdx(clampedIndex);
   };
 
@@ -98,16 +125,16 @@ export default function TestimonialsSection() {
           {/* Left Info Column */}
           <div className="lg:w-[32%] flex flex-col items-start shrink-0">
             <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold tracking-wider uppercase mb-5">
-              What Our Clients Say
+              {t('testimonials.badge')}
             </div>
 
             <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-5">
-              Real people. <br />
-              <span className="text-blue-600">Real results.</span>
+              {t('testimonials.title_1')} <br />
+              <span className="text-blue-600">{t('testimonials.title_2')}</span>
             </h2>
 
             <p className="text-sm text-slate-600 leading-relaxed max-w-[320px] mb-6 font-medium">
-              Thousands of clients have found the right advice and achieved their goals with the help of our experts.
+              {t('testimonials.subtitle')}
             </p>
 
             {/* Navigation Arrow Controls */}
@@ -129,7 +156,7 @@ export default function TestimonialsSection() {
               </button>
 
               <span className="text-xs font-bold text-slate-400 ml-2">
-                {testIdx + 1} / {TESTIMONIALS.length}
+                {testIdx + 1} / {testimonialsList.length}
               </span>
             </div>
 
@@ -173,7 +200,7 @@ export default function TestimonialsSection() {
               }`}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {INFINITE_TESTIMONIALS.map((testimonial, idx) => (
+              {infiniteTestimonials.map((testimonial, idx) => (
                 <div 
                   key={idx} 
                   className="w-[290px] sm:w-[320px] shrink-0 bg-white rounded-3xl p-7 border border-slate-100/90 shadow-[0_4px_25px_rgba(15,23,42,0.04)] flex flex-col justify-between hover:shadow-[0_12px_35px_rgba(37,99,235,0.09)] hover:-translate-y-1 transition-all duration-300 pointer-events-none"
@@ -207,13 +234,13 @@ export default function TestimonialsSection() {
 
         {/* Carousel Pagination Dots */}
         <div className="flex items-center justify-center gap-2 mt-10">
-          {TESTIMONIALS.map((_, i) => (
+          {testimonialsList.map((_, i: number) => (
             <button 
               key={i}
               onClick={() => {
                 setTestIdx(i);
                 if (testSliderRef.current) {
-                  testSliderRef.current.scrollTo({ left: (TESTIMONIALS.length + i) * 344, behavior: 'smooth' });
+                  testSliderRef.current.scrollTo({ left: (testimonialsList.length + i) * 344, behavior: 'smooth' });
                 }
               }}
               aria-label={`Go to slide ${i + 1}`}

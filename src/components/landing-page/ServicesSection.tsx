@@ -7,6 +7,7 @@ import {
   CheckCircle2, ArrowRight, Heart, ClipboardList, Zap, ShieldCheck, Award, 
   MessageSquare, Sparkles, FileText, LineChart, Home, Clock
 } from 'lucide-react';
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories', icon: LayoutGrid },
@@ -334,13 +335,48 @@ const SERVICES_BY_CATEGORY: Record<string, {
 
 export default function ServicesSection() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const { locale, t } = useLandingLanguage();
 
-  const currentServices = SERVICES_BY_CATEGORY[activeCategory] || SERVICES_BY_CATEGORY['all'];
+  const currentServices = SERVICES_BY_CATEGORY[activeCategory] || SERVICES_BY_CATEGORY.all;
+
+  const serviceTranslations: Record<string, { title: string; description: string; bulletPoints: string[] }> = {
+    "legal-1": {
+      title: "Rechtsberatung",
+      description: "Erhalten Sie Klarheit in Rechtsfragen durch erfahrene Anwälte.",
+      bulletPoints: ["Verträge & Vereinbarungen", "Familienrecht", "Immobilienrecht"]
+    },
+    "business-1": {
+      title: "Unternehmensberatung",
+      description: "Skalieren Sie Ihr Unternehmen mit strategischer Begleitung.",
+      bulletPoints: ["Unternehmensstrategie", "Prozessoptimierung", "Startup-Beratung"]
+    },
+    "relationships-1": {
+      title: "Partnerschaftsberatung",
+      description: "Stärken Sie Ihre Beziehung durch professionelles Coaching.",
+      bulletPoints: ["Eheberatung", "Vertrauensaufbau", "Emotionaler Austausch"]
+    },
+    "career-1": {
+      title: "Karriere-Coaching",
+      description: "Erreichen Sie Ihre beruflichen Ziele mit Expertenbegleitung.",
+      bulletPoints: ["Karrierestrategie", "Bewerbungstraining", "Gehaltsverhandlung"]
+    },
+    "finance-1": {
+      title: "Finanzen & Vermögen",
+      description: "Optimieren Sie Ihre Finanzen mit erfahrenen Finanzberatern.",
+      bulletPoints: ["Steuerplanung", "Investitionen", "Altersvorsorge"]
+    },
+    "tech-1": {
+      title: "IT & Technologie",
+      description: "Zukunftssichere IT-Architektur und Cyber-Sicherheit.",
+      bulletPoints: ["Softwarearchitektur", "Cybersecurity", "Digitalisierung"]
+    }
+  };
 
   const cycleCategory = () => {
-    const currentIndex = CATEGORIES.findIndex(cat => cat.id === activeCategory);
-    const nextIndex = (currentIndex + 1) % CATEGORIES.length;
-    setActiveCategory(CATEGORIES[nextIndex].id);
+    const ids = CATEGORIES.map(c => c.id);
+    const currentIndex = ids.indexOf(activeCategory);
+    const nextIndex = (currentIndex + 1) % ids.length;
+    setActiveCategory(ids[nextIndex]);
   };
 
   return (
@@ -349,13 +385,13 @@ export default function ServicesSection() {
       {/* Section Header */}
       <div className="flex flex-col items-center text-center mb-10">
         <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-xss font-bold tracking-wider uppercase mb-4 shadow-sm border border-slate-200">
-          Our Services
+          {t('services.badge')}
         </div>
         <h2 className="text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 tracking-tight leading-tight mb-3">
-          Expertise for <span className="text-blue-600">every area of life</span>
+          {t('services.title_1')} <span className="text-blue-600">{t('services.title_2')}</span>
         </h2>
         <p className="text-base text-slate-600 font-medium max-w-lg mx-auto leading-relaxed">
-          Get professional guidance across a wide range of categories from trusted experts.
+          {t('services.subtitle')}
         </p>
       </div>
 
@@ -366,6 +402,17 @@ export default function ServicesSection() {
           {CATEGORIES.map((cat, idx) => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
+
+            const categoryNames: Record<string, { de: string; en: string }> = {
+              all: { de: 'Alle Kategorien', en: 'All Categories' },
+              legal: { de: 'Recht', en: 'Legal' },
+              business: { de: 'Wirtschaft', en: 'Business' },
+              relationships: { de: 'Partnerschaft', en: 'Relationships' },
+              career: { de: 'Karriere', en: 'Career' },
+              finance: { de: 'Finanzen', en: 'Finance' },
+            };
+
+            const displayLabel = categoryNames[cat.id]?.[locale as 'de' | 'en'] || cat.label;
 
             return (
               <React.Fragment key={cat.id}>
@@ -378,7 +425,7 @@ export default function ServicesSection() {
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
-                  <span>{cat.label}</span>
+                  <span>{displayLabel}</span>
                 </button>
 
                 {idx < CATEGORIES.length - 1 && (
@@ -406,37 +453,33 @@ export default function ServicesSection() {
         {currentServices.map((service) => {
           const Icon = service.icon;
 
+          const translatedInfo = locale === 'de' && serviceTranslations[service.id] 
+            ? serviceTranslations[service.id] 
+            : { title: service.title, description: service.description, bulletPoints: service.bulletPoints };
+
           return (
             <div 
               key={service.id} 
-              className={`bg-white rounded-3xl border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.04)] ${service.shadowHover} transition-all duration-300 flex flex-col overflow-hidden group hover:-translate-y-1`}
+              className={`bg-white rounded-3xl border border-slate-200 shadow-[0_4px_25px_rgba(15,23,42,0.04)] ${service.shadowHover} transition-all duration-300 overflow-hidden flex flex-col justify-between group`}
             >
-              {/* Card Image */}
-              <div className="relative w-full h-44 overflow-hidden bg-slate-100">
-                <img 
-                  src={service.image} 
-                  alt={service.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              
-              {/* Floating Icon Badge */}
-              <div className="px-6 relative">
-                <div className={`w-12 h-12 rounded-2xl bg-white border border-slate-200 ${service.iconColor} shadow-md flex items-center justify-center -mt-6 relative z-10`}>
-                  <Icon className="w-5 h-5" />
+              <div>
+                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                  <img 
+                    src={service.image} 
+                    alt={translatedInfo.title} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute top-3.5 right-3.5 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md">
+                    <Icon className={`w-5 h-5 ${service.iconColor}`} />
+                  </div>
                 </div>
-              </div>
 
-              {/* Content */}
-              <div className="p-6 pt-3 flex flex-col flex-grow justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-1.5">{service.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed mb-4 min-h-[38px]">
-                    {service.description}
-                  </p>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug">{translatedInfo.title}</h3>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed mb-5">{translatedInfo.description}</p>
 
                   <div className="space-y-2">
-                    {service.bulletPoints.map((point, i) => (
+                    {translatedInfo.bulletPoints.map((point, i) => (
                       <div key={i} className="flex items-center gap-2 text-[12px] font-medium text-slate-600">
                         <CheckCircle2 className={`w-4 h-4 ${service.checkColor} shrink-0`} />
                         <span>{point}</span>
@@ -458,9 +501,13 @@ export default function ServicesSection() {
             <ClipboardList className="w-6 h-6" />
           </div>
           <div className="flex flex-col">
-            <h4 className="text-[17px] font-bold text-slate-900 mb-0.5">Can&apos;t find what you need?</h4>
+            <h4 className="text-[17px] font-bold text-slate-900 mb-0.5">
+              {locale === 'de' ? 'Nicht das Richtige gefunden?' : 'Can\'t find what you need?'}
+            </h4>
             <p className="text-sm text-slate-600">
-              Our experts cover 100+ areas of expertise on the Fixpair Mobile App.
+              {locale === 'de' 
+                ? 'Unsere Experten decken über 100 Fachbereiche in der Fixpair Mobile App ab.' 
+                : 'Our experts cover 100+ areas of expertise on the Fixpair Mobile App.'}
             </p>
           </div>
         </div>
@@ -469,7 +516,7 @@ export default function ServicesSection() {
           href="/#mobile-app"
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)] shrink-0 flex items-center gap-2 cursor-pointer"
         >
-          Download Mobile App
+          {locale === 'de' ? 'Mobile App herunterladen' : 'Download Mobile App'}
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

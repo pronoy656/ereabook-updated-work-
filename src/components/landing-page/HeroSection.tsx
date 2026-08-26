@@ -1,10 +1,76 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Star, Users, ShieldCheck, CalendarDays } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+
+function AnimatedNumber({ 
+  value, 
+  prefix = "", 
+  suffix = "", 
+  decimals = 0,
+  duration = 2000 
+}: { 
+  value: number; 
+  prefix?: string; 
+  suffix?: string; 
+  decimals?: number;
+  duration?: number;
+}) {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          let startTime: number | null = null;
+
+          const step = (timestamp: number) => {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+            setCount(easeOutProgress * value);
+
+            if (progress < 1) {
+              requestAnimationFrame(step);
+            } else {
+              setCount(value);
+            }
+          };
+
+          requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, [value, duration, hasAnimated]);
+
+  const formattedNumber = decimals > 0 
+    ? count.toFixed(decimals) 
+    : Math.floor(count).toLocaleString();
+
+  return (
+    <span ref={ref}>
+      {prefix}{formattedNumber}{suffix}
+    </span>
+  );
+}
+
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
 
 export default function HeroSection() {
+  const { t } = useLandingLanguage();
+
   return (
     <>
       {/* Hero Section */}
@@ -18,14 +84,14 @@ export default function HeroSection() {
             <div className="bg-blue-600 rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                <CheckCircle2 className="w-2.5 h-2.5 text-white" />
             </div>
-            <span>Trusted by thousands across Germany</span>
+            <span>{t('hero.trust_badge')}</span>
           </div>
 
           {/* Large Bold Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold leading-[1.12] tracking-tight text-slate-900">
-            Expert advice, <br />
+            {t('hero.title_1')} <br />
             <span className="relative inline-block text-blue-600 whitespace-nowrap">
-              when it matters most.
+              {t('hero.title_2')}
               {/* Subtle curved blue underline */}
               <svg className="absolute -bottom-2.5 left-0 w-full h-3.5 text-blue-600" viewBox="0 0 320 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 10C80 2 220 2 317 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -35,17 +101,17 @@ export default function HeroSection() {
 
           {/* Subheading */}
           <p className="text-[1.05rem] text-slate-600 leading-relaxed max-w-lg font-normal pt-1">
-            Connect with verified professionals, book secure consultations, and get personalized reports that help you make confident decisions.
+            {t('hero.subtitle')}
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-1 w-full sm:w-auto">
             <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-7 py-3.5 rounded-xl text-sm font-bold transition-all shadow-xl shadow-blue-600/30 cursor-pointer">
-              Find an Expert
+              {t('hero.find_expert')}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button className="w-full sm:w-auto flex items-center justify-center bg-white border border-blue-600/35 hover:border-blue-600 hover:bg-blue-50/50 text-blue-600 px-7 py-3.5 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer">
-              Become a Consultant
+              {t('hero.become_consultant')}
             </button>
           </div>
 
@@ -75,7 +141,7 @@ export default function HeroSection() {
                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
               </div>
               <div className="text-slate-600 font-medium">
-                <span className="font-bold text-slate-900">4.9/5</span> from 25,000+ consultations
+                <span className="font-bold text-slate-900">4.9/5</span> {t('hero.reviews_text')}
               </div>
             </div>
           </div>
@@ -134,8 +200,10 @@ export default function HeroSection() {
                   <Users className="w-5 h-5" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-base font-extrabold text-slate-900 leading-tight">10,000+</span>
-                  <span className="text-xs font-semibold text-slate-500">Verified Professionals</span>
+                  <span className="text-base font-extrabold text-slate-900 leading-tight">
+                    <AnimatedNumber value={10000} suffix="+" />
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500">{t('hero.stat_verified')}</span>
                 </div>
               </div>
               <div className="w-full h-6 pt-1">
@@ -169,9 +237,9 @@ export default function HeroSection() {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-900 leading-tight mb-1">Secure &amp; Private</span>
+                <span className="text-sm font-bold text-slate-900 leading-tight mb-1">{t('hero.stat_secure')}</span>
                 <span className="text-xs text-slate-500 font-medium leading-relaxed">
-                  End-to-end encrypted sessions for your complete privacy
+                  {t('hero.stat_secure_desc')}
                   <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 ml-1.5 align-middle animate-pulse" />
                 </span>
               </div>
@@ -192,8 +260,10 @@ export default function HeroSection() {
               <Users className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">10,000+</div>
-              <div className="text-sm font-medium text-slate-600">Verified Professionals</div>
+              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">
+                <AnimatedNumber value={10000} suffix="+" />
+              </div>
+              <div className="text-sm font-medium text-slate-600">{t('hero.stat_verified')}</div>
             </div>
           </div>
 
@@ -205,8 +275,10 @@ export default function HeroSection() {
               <CalendarDays className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">25,000+</div>
-              <div className="text-sm font-medium text-slate-600">Consultations Completed</div>
+              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">
+                <AnimatedNumber value={25000} suffix="+" />
+              </div>
+              <div className="text-sm font-medium text-slate-600">{t('hero.stat_consultations')}</div>
             </div>
           </div>
 
@@ -218,8 +290,10 @@ export default function HeroSection() {
               <Star className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">4.9/5</div>
-              <div className="text-sm font-medium text-slate-600">Average Client Rating</div>
+              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">
+                <AnimatedNumber value={4.9} decimals={1} suffix="/5" />
+              </div>
+              <div className="text-sm font-medium text-slate-600">{t('hero.stat_rating')}</div>
             </div>
           </div>
 
@@ -231,8 +305,10 @@ export default function HeroSection() {
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">100%</div>
-              <div className="text-sm font-medium text-slate-600">Secure &amp; Private</div>
+              <div className="text-2xl font-bold text-slate-900 leading-tight mb-0.5">
+                <AnimatedNumber value={100} suffix="%" />
+              </div>
+              <div className="text-sm font-medium text-slate-600">{t('hero.stat_secure')}</div>
             </div>
           </div>
         </div>

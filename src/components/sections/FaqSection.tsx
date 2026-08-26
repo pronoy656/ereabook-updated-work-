@@ -1,8 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import { HelpCircle, ChevronDown, ChevronUp, Headphones, ArrowRight, Plus, Star } from 'lucide-react';
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
 
-const faqs = [
+const faqsEn = [
   {
     question: "How do I book a consultation?",
     answer: "Simply browse experts or categories, select the expert that fits your needs, choose a convenient time, and confirm your booking. You'll receive a confirmation with all the details."
@@ -33,8 +34,41 @@ const faqs = [
   }
 ];
 
+const faqsDe = [
+  {
+    question: "Wie buche ich ein Beratungsgespräch?",
+    answer: "Durchsuchen Sie einfach unsere Experten oder Fachbereiche, wählen Sie den passenden Experten aus, bestimmen Sie Ihren Wunschtermin und bestätigen Sie die Buchung."
+  },
+  {
+    question: "Sind die Experten verifiziert?",
+    answer: "Ja, jeder Experte auf unserer Plattform durchläuft einen strengen Verifizierungsprozess, um Qualifikation und Erfahrung sicherzustellen."
+  },
+  {
+    question: "Welche Arten von Beratungen gibt es?",
+    answer: "Wir bieten Videocalls, Telefonate und schriftliche Beratungen an – je nach Experte und Ihrer persönlichen Präferenz."
+  },
+  {
+    question: "Wie viel kostet eine Beratung?",
+    answer: "Die Kosten hängen vom Stundensatz des Experten und der Dauer ab. Alle Preise sind transparent auf dem Expertenprofil einsehbar."
+  },
+  {
+    question: "Kann ich meinen Termin stornieren oder verschieben?",
+    answer: "Ja, Sie können Ihren Termin bis zu 24 Stunden vor Beginn kostenfrei verschieben oder stornieren."
+  },
+  {
+    question: "Sind meine persönlichen Daten sicher?",
+    answer: "Absolut. Wir verwenden moderne Ende-zu-Ende-Verschlüsselung, um Ihre Daten und Gespräche vollständig zu schützen."
+  },
+  {
+    question: "Wie kann ich den Kundensupport erreichen?",
+    answer: "Unser Support-Team ist rund um die Uhr per E-Mail an support@fixpair.com oder über den Support-Button erreichbar."
+  }
+];
+
 export default function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number>(0);
+  const { locale, t } = useLandingLanguage();
+  const currentFaqs = locale === 'de' ? faqsDe : faqsEn;
 
   return (
     <section id="faq" className="relative w-full bg-white py-24 z-10 overflow-hidden scroll-mt-20">
@@ -44,13 +78,13 @@ export default function FaqSection() {
         <div className="flex flex-col items-center text-center mb-16">
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-bold tracking-wider uppercase mb-6">
             <HelpCircle className="w-3.5 h-3.5" />
-            FAQS
+            {t('faq.badge')}
           </div>
           <h2 className="text-4xl lg:text-[2.75rem] font-bold text-[#0B1B3D] tracking-tight mb-4">
-            Frequently Asked Questions
+            {t('faq.title_1')} {t('faq.title_2')}
           </h2>
           <p className="text-[15px] text-slate-500 font-medium">
-            Find answers to common questions about our platform and services.
+            {t('faq.subtitle')}
           </p>
         </div>
 
@@ -91,7 +125,7 @@ export default function FaqSection() {
 
           {/* Right Column: Accordion */}
           <div className="flex-1 w-full flex flex-col gap-3 pt-2">
-            {faqs.map((faq, index) => {
+            {currentFaqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
                 <div 

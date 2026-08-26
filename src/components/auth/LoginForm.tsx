@@ -78,17 +78,6 @@ export default function LoginForm() {
             >
               {t("admin_login")}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("xyhuby@mailinator.com");
-                setPassword("123456789");
-              }}
-              className="text-[11px] font-medium px-2 py-1 bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-600 rounded-lg transition-all border border-slate-200 active:scale-95 flex items-center gap-1"
-              title="Test Email for check"
-            >
-              {t("test_consultant_login")}
-            </button>
           </div>
         </div>
         <div className="space-y-2 text-left">

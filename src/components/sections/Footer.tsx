@@ -1,8 +1,12 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
 import { Twitter, Instagram, Linkedin, Facebook, Globe } from 'lucide-react';
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
 
 export default function Footer() {
+  const { locale, switchLanguage, t } = useLandingLanguage();
+
   return (
     <footer className="w-full bg-[#0B1426] pt-20 pb-10 relative overflow-hidden text-white z-0">
       
@@ -20,13 +24,13 @@ export default function Footer() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 mb-6 group">
               <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] group-hover:scale-105 transition-transform">
-                E
+                F
               </div>
-              <span className="text-[22px] font-bold tracking-tight text-white">Ebreabuk</span>
+              <span className="text-[22px] font-bold tracking-tight text-white">Fixpair</span>
             </Link>
             
             <p className="text-[15px] text-slate-400 font-medium leading-relaxed mb-8 max-w-[320px]">
-              The world's leading platform connecting you with verified experts across business, health, finance, and legal fields instantly.
+              {t('footer.description')}
             </p>
             
             {/* Social Links */}
@@ -46,39 +50,24 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Platform Links (Spans 2) */}
+          {/* Platform Links */}
           <div className="lg:col-span-2 lg:col-start-6 flex flex-col">
-            <h4 className="text-[16px] font-bold text-white mb-6">Platform</h4>
+            <h4 className="text-[16px] font-bold text-white mb-6">{t('footer.quick_links')}</h4>
             <ul className="flex flex-col gap-4">
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Browse Experts</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Categories</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">How it Works</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Pricing</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Success Stories</Link></li>
+              <li><a href="#experts" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('nav.experts')}</a></li>
+              <li><a href="#services" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('nav.services')}</a></li>
+              <li><a href="#how-it-works" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('nav.how_it_works')}</a></li>
+              <li><a href="#pricing" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('nav.pricing')}</a></li>
             </ul>
           </div>
 
-          {/* Company Links (Spans 2) */}
+          {/* Legal Links */}
           <div className="lg:col-span-2 flex flex-col">
-            <h4 className="text-[16px] font-bold text-white mb-6">Company</h4>
+            <h4 className="text-[16px] font-bold text-white mb-6">{t('footer.legal')}</h4>
             <ul className="flex flex-col gap-4">
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">About Us</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors flex items-center gap-2">Careers <span className="bg-blue-600/20 text-blue-400 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Hiring</span></Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Press</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Blog</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Contact</Link></li>
-            </ul>
-          </div>
-
-          {/* Support Links (Spans 2) */}
-          <div className="lg:col-span-2 flex flex-col">
-            <h4 className="text-[16px] font-bold text-white mb-6">Support</h4>
-            <ul className="flex flex-col gap-4">
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Help Center</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Cookie Policy</Link></li>
-              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">Security</Link></li>
+              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('footer.terms')}</Link></li>
+              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('footer.privacy')}</Link></li>
+              <li><Link href="#" className="text-[14px] text-slate-400 hover:text-blue-400 font-medium transition-colors">{t('footer.imprint')}</Link></li>
             </ul>
           </div>
 
@@ -87,12 +76,17 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="w-full pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-[14px] text-slate-500 font-medium">
-            &copy; {new Date().getFullYear()} Ebreabuk. All rights reserved.
+            {t('footer.rights')}
           </p>
           
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
-            <Globe className="w-4 h-4 text-slate-400" />
-            <span className="text-[13px] text-slate-300 font-medium">English (US)</span>
+          <div 
+            onClick={() => switchLanguage(locale === 'de' ? 'en' : 'de')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+          >
+            <Globe className="w-4 h-4 text-blue-400" />
+            <span className="text-[13px] text-slate-300 font-medium">
+              {locale === 'de' ? '🇩🇪 Deutsch' : '🇬🇧 English'}
+            </span>
           </div>
         </div>
 

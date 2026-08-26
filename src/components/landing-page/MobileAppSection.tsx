@@ -2,8 +2,11 @@
 
 import React from 'react';
 import { Download, CalendarDays, Video, MessageSquare, FileText, Star, Search, Scale, Briefcase, Users, LineChart, ShieldCheck, QrCode } from 'lucide-react';
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
 
 export default function MobileAppSection() {
+  const { t } = useLandingLanguage();
+
   return (
     <section id="mobile-app" className="container mx-auto px-6 sm:px-8 lg:px-12 py-12 lg:py-16 relative z-10 scroll-mt-20">
       <div className="bg-gradient-to-b from-[#F4F8FE] via-[#FAFCFF] to-[#EFF6FF] border border-blue-100/80 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.07)] rounded-[3rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden">
@@ -18,16 +21,16 @@ export default function MobileAppSection() {
           <div className="lg:col-span-6 flex flex-col items-start text-left">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold tracking-wider uppercase mb-6 shadow-sm">
               <Download className="w-3.5 h-3.5" />
-              OUR MOBILE APP
+              {t('mobile.badge')}
             </div>
             
             <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-5 leading-[1.15]">
-              Expert Help,<br />
-              Right in Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">Pocket</span>
+              {t('mobile.title_1')}<br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">{t('mobile.title_2')}</span>
             </h2>
             
             <p className="text-base text-slate-600 font-medium mb-8 max-w-lg leading-relaxed">
-              Connect with top verified experts, book instant consultations, and get personalized guidance anytime, anywhere.
+              {t('mobile.subtitle')}
             </p>
 
             {/* 4 Feature Cards Grid */}
@@ -39,8 +42,8 @@ export default function MobileAppSection() {
                   <CalendarDays className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">Book on the Go</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Book sessions in just a few taps.</p>
+                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">{t('mobile.feature_1_title')}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">{t('mobile.feature_1_desc')}</p>
                 </div>
               </div>
 
@@ -50,8 +53,8 @@ export default function MobileAppSection() {
                   <Video className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">HD Video Calls</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Join private 1-on-1 video rooms.</p>
+                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">{t('mobile.feature_2_title')}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">{t('mobile.feature_2_desc')}</p>
                 </div>
               </div>
 
@@ -61,8 +64,8 @@ export default function MobileAppSection() {
                   <MessageSquare className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">Instant Messaging</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Chat with experts before &amp; after.</p>
+                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">{t('mobile.feature_3_title')}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">{t('mobile.feature_3_desc')}</p>
                 </div>
               </div>
 
@@ -72,8 +75,8 @@ export default function MobileAppSection() {
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">Detailed Reports</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Get summary notes after calls.</p>
+                  <h4 className="text-sm font-bold text-slate-900 mb-0.5">{t('mobile.feature_4_title')}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">{t('mobile.feature_4_desc')}</p>
                 </div>
               </div>
 

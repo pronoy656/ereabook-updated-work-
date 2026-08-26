@@ -3,29 +3,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Menu, X } from 'lucide-react';
-
-const NAV_ITEMS = [
-  { label: 'Why Us', href: '#why-choose-us' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Services', href: '#services' },
-  { label: 'Experts', href: '#experts' },
-  { label: 'Pricing', href: '#pricing' },
-];
+import { useLandingLanguage } from '@/context/LandingLanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
+  const { locale, switchLanguage, t } = useLandingLanguage();
+
+  const navItems = [
+    { label: t('nav.why_us'), href: '#why-choose-us' },
+    { label: t('nav.how_it_works'), href: '#how-it-works' },
+    { label: t('nav.services'), href: '#services' },
+    { label: t('nav.experts'), href: '#experts' },
+    { label: t('nav.pricing'), href: '#pricing' },
+  ];
 
   const activeSectionRef = useRef<string>('');
   const isClickScrollingRef = useRef<boolean>(false);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // High-performance throttled scroll listener
   useEffect(() => {
     let ticking = false;
 
     const updateActiveSection = () => {
-      // Prevent scroll event thrashing while programmatic click smooth scroll is running
       if (isClickScrollingRef.current) {
         ticking = false;
         return;
@@ -40,7 +41,7 @@ export default function Navbar() {
         return;
       }
 
-      const sectionIds = NAV_ITEMS.map(item => item.href.replace('#', ''));
+      const sectionIds = navItems.map(item => item.href.replace('#', ''));
       let currentActive = '';
 
       for (const id of sectionIds) {
@@ -53,7 +54,6 @@ export default function Navbar() {
         }
       }
 
-      // Only update state if the active section actually changes (eliminates unnecessary re-renders)
       if (currentActive && currentActive !== activeSectionRef.current) {
         activeSectionRef.current = currentActive;
         setActiveSection(currentActive);
@@ -75,7 +75,7 @@ export default function Navbar() {
       window.removeEventListener('scroll', handleScroll);
       if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
     };
-  }, []);
+  }, [navItems]);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('#')) {
@@ -84,7 +84,6 @@ export default function Navbar() {
       const elem = document.getElementById(targetId);
 
       if (elem) {
-        // Instantly set active section & lock listener updates during smooth scroll animation
         isClickScrollingRef.current = true;
         activeSectionRef.current = targetId;
         setActiveSection(targetId);
@@ -123,9 +122,9 @@ export default function Navbar() {
           <span className="text-xl font-extrabold text-slate-900 tracking-tight">Fixpair</span>
         </Link>
 
-        {/* Desktop Navigation Links with Generous Spacing & Fast Active Highlighting */}
+        {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center gap-3 xl:gap-4 text-sm font-medium">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const sectionId = item.href.replace('#', '');
             const isActive = activeSection === sectionId;
 
@@ -149,36 +148,45 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* CTA Buttons */}
-        <div className="hidden lg:flex items-center gap-4">
+        {/* Right Actions & Language Switcher */}
+        <div className="hidden lg:flex items-center gap-3.5">
+          
+          {/* Dashboard Language Switcher Dropdown (Globe + Menu) */}
+          <LanguageSwitcher />
+
           <Link href="/login" className="text-xs font-bold text-slate-700 hover:text-blue-600 px-3 py-2 transition-colors">
-            Sign In
+            {t('nav.sign_in')}
           </Link>
+
           <a
             href="#mobile-app"
             onClick={(e) => scrollToSection(e, '#mobile-app')}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/35 hover:-translate-y-0.5 cursor-pointer"
           >
-            Get Mobile App
+            {t('nav.get_app')}
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>
 
-        {/* Mobile Menu Toggle Button */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle Navigation Menu"
-          className="lg:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-        >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        {/* Mobile Toggle & Language Switcher */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <LanguageSwitcher />
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle Navigation Menu"
+            className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
 
       </div>
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-b border-slate-200 px-6 py-6 flex flex-col gap-3 animate-in slide-in-from-top-2 duration-200 shadow-xl">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const sectionId = item.href.replace('#', '');
             const isActive = activeSection === sectionId;
 
@@ -205,14 +213,14 @@ export default function Navbar() {
               className="w-full text-center text-xs font-bold text-slate-900 hover:text-blue-600 py-2.5 rounded-xl border border-slate-200"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Sign In
+              {t('nav.sign_in')}
             </Link>
             <a
               href="#mobile-app"
               onClick={(e) => scrollToSection(e, '#mobile-app')}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-md shadow-blue-600/25"
             >
-              Get Mobile App
+              {t('nav.get_app')}
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>
