@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
+import api from '@/lib/axios';
 
 interface AuthContextType {
   user: any | null;
@@ -20,14 +21,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const token = Cookies.get('accessToken');
       if (token) {
+        let initialUser: any = { token };
         try {
           const decoded: any = jwtDecode(token);
-          setUser({ ...decoded, token });
+          initialUser = { ...decoded, token };
         } catch (e) {
-          setUser({ token });
+          initialUser = { token };
+        }
+        setUser(initialUser);
+
+        try {
+          const response = await api.get('/user/profile');
+          if (response.data.success && response.data.data) {
+            setUser((prev: any) => ({ ...prev, ...response.data.data }));
+          }
+        } catch (err) {
+          console.error("Failed to fetch user profile on auth init:", err);
         }
       }
       setLoading(false);

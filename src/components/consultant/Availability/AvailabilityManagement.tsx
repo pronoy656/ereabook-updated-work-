@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
 export interface TimeSlot {
+  id?: string;
   start: string;
   end: string;
 }
@@ -39,6 +40,7 @@ export default function AvailabilityManagement() {
               fetchedData[dateKey] = [];
             }
             fetchedData[dateKey].push({
+              id: slot._id || slot.id,
               start: slot.startTime,
               end: slot.endTime
             });

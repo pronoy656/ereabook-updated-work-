@@ -109,9 +109,11 @@ export function useTranscription({
 
     socket.on('connect', () => {
       console.log('🔌✅ Socket connected for live transcription, id:', socket.id);
-      // Tell the backend which consultation this socket is watching so it can
-      // route transcript:new events to the correct room.
+      // Join consultation room via all common event conventions
       socket.emit('join-consultation', consultationId);
+      socket.emit('join_room', consultationId);
+      socket.emit('join', consultationId);
+      socket.emit('joinConsultation', consultationId);
       setIsConnected(true);
     });
 
@@ -124,49 +126,42 @@ export function useTranscription({
       console.warn('🔌⚠️ Socket connection error:', err.message);
     });
 
-    // ── Agora STT: transcript:new ──────────────────────────────────
-    socket.on(
-      'transcript:new',
-      (data: {
-        consultationId: string;
-        speakerUid: number;
-        speakerRole: string;
-        text: string;
-        isFinal: boolean;
-        timestamp: string;
-      }) => {
-        console.log('📝 STT transcript received:', data);
+    // Handle transcript incoming data from socket
+    const handleTranscriptData = (data: any) => {
+      console.log('📝 STT transcript received:', data);
 
-        if (data.consultationId !== consultationId) return;
+      if (!data || !data.text || !data.text.trim()) return;
+      if (data.consultationId && String(data.consultationId) !== String(consultationId)) return;
 
-        setSttActive(true);
+      setSttActive(true);
 
-        if (!data.text.trim()) return;
+      const isClient = data.speakerUid ? Number(data.speakerUid) !== consultantUid : (data.speaker?.toLowerCase() !== 'you');
 
-        // Backend may send speakerUid as string or number — normalise before comparing
-        const isClient = Number(data.speakerUid) !== consultantUid;
+      if (isClient && data.isFinal === false) {
+        setClientInterim(data.text);
+      } else {
+        if (isClient) setClientInterim('');
+        upsertCaptionLine({
+          speaker: isClient ? (data.speaker || 'Client') : 'You',
+          text: data.text,
+          source: 'stt',
+          isFinal: data.isFinal !== false,
+          timestamp: data.timestamp || Date.now(),
+          speakerUid: data.speakerUid ? Number(data.speakerUid) : undefined,
+        });
+      }
+    };
 
-        if (isClient && !data.isFinal) {
-          // Show non-final client speech as a typing indicator, not in the main list
-          setClientInterim(data.text);
-        } else {
-          if (isClient) setClientInterim(''); // clear interim when final arrives
-          upsertCaptionLine({
-            speaker: isClient ? 'Client' : 'You',
-            text: data.text,
-            source: 'stt',
-            isFinal: data.isFinal,
-            timestamp: data.timestamp,
-            speakerUid: Number(data.speakerUid),
-          });
-        }
-      },
-    );
+    // ── Register all potential socket transcript event names ───────
+    socket.on('transcript:new', handleTranscriptData);
+    socket.on('transcript', handleTranscriptData);
+    socket.on('stt-transcript', handleTranscriptData);
+    socket.on('new-transcript', handleTranscriptData);
 
     // ── Peer relay: receive-speech ─────────────────────────────────
     socket.on(
       'receive-speech',
-      (data: { speaker: string; text: string; sessionId: string }) => {
+      (data: { speaker?: string; text: string; sessionId?: string }) => {
         console.log('📥 Received speech relay:', data);
 
         if (data.text?.trim()) {
@@ -209,7 +204,95 @@ export function useTranscription({
       socketRef.current = null;
       setIsConnected(false);
     };
-  }, [consultationId, enabled, upsertCaptionLine]);
+  }, [consultationId, enabled, consultantUid, upsertCaptionLine]);
+
+  // ── Web Speech API Fallback for Real-Time Local Mic Transcription ──
+  useEffect(() => {
+    if (!enabled || !consultationId) return;
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.log('ℹ️ WebkitSpeechRecognition not supported natively, relying solely on socket/Agora STT.');
+      return;
+    }
+
+    let recognition: any = null;
+    let isActive = true;
+
+    try {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let interimText = '';
+        let finalText = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const textChunk = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalText += textChunk;
+          } else {
+            interimText += textChunk;
+          }
+        }
+
+        if (finalText.trim()) {
+          console.log('🎤 Real-Time Local Speech Recognized:', finalText);
+          upsertCaptionLine({
+            speaker: 'You',
+            text: finalText.trim(),
+            source: 'stt',
+            isFinal: true,
+            timestamp: Date.now(),
+          });
+
+          // Relay to backend & peer
+          if (consultationId) {
+            api.post(`/transcription/${consultationId}/ingest`, {
+              uid: consultantUid,
+              text: finalText.trim(),
+              isFinal: true,
+              timestamp: Date.now(),
+            }).catch(() => {});
+          }
+        }
+      };
+
+      recognition.onerror = (err: any) => {
+        if (err.error !== 'no-speech') {
+          console.warn('SpeechRecognition notice:', err.error);
+        }
+      };
+
+      recognition.onend = () => {
+        if (isActive && recognition) {
+          try {
+            recognition.start();
+          } catch (e) {
+            // ignore
+          }
+        }
+      };
+
+      recognition.start();
+      console.log('🎙️ Local Speech Recognition activated for live transcript fallback.');
+    } catch (e) {
+      console.warn('Could not initialize SpeechRecognition fallback:', e);
+    }
+
+    return () => {
+      isActive = false;
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch (e) {}
+      }
+    };
+  }, [consultationId, enabled, consultantUid, upsertCaptionLine]);
 
 
   // ── Fetch transcript history on mount ──────────────────────────────

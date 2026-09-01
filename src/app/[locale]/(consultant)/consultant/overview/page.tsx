@@ -15,20 +15,30 @@ export default function ConsultantOverviewPage() {
   const t = useTranslations('consultant_overview');
   const { user } = useAuth();
   const [summary, setSummary] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSummary = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/consultant/dashboard-summary');
-        setSummary(response.data?.data || null);
+        const [summaryRes, profileRes] = await Promise.allSettled([
+          api.get('/consultant/dashboard-summary'),
+          api.get('/user/profile')
+        ]);
+
+        if (summaryRes.status === 'fulfilled') {
+          setSummary(summaryRes.value.data?.data || null);
+        }
+        if (profileRes.status === 'fulfilled' && profileRes.value.data?.success) {
+          setProfile(profileRes.value.data.data);
+        }
       } catch (err) {
-        console.error("Failed to fetch dashboard summary:", err);
+        console.error("Failed to fetch overview data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchSummary();
+    fetchData();
   }, []);
 
   const getTrendValue = (metric: any) => {
@@ -36,7 +46,8 @@ export default function ConsultantOverviewPage() {
     return metric.direction === 'down' ? -Math.abs(metric.changePct) : Math.abs(metric.changePct);
   };
 
-  const userName = user?.name?.split(' ')[0] || user?.fullName?.split(' ')[0] || 'John';
+  const displayName = profile?.name || user?.name || user?.fullName;
+  const userName = displayName ? displayName.trim().split(' ')[0] : 'Consultant';
 
   return (
     <div className="w-full mx-auto space-y-6 animate-in fade-in duration-500 pb-10 bg-[#FAFAFA] dark:bg-[#0f172a] min-h-screen transition-colors">

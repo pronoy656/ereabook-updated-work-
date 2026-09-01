@@ -56,50 +56,71 @@ export function UpcomingScheduledBookings() {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [processing, setProcessing] = useState<{ id: string, type: 'accept' | 'reject' } | null>(null);
 
+  const extractList = (res: any): any[] => {
+    if (!res?.data) return [];
+    const payload = res.data.data !== undefined ? res.data.data : res.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.appointments)) return payload.appointments;
+    if (Array.isArray(payload?.bookings)) return payload.bookings;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+  };
+
   const fetchRequests = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const response = await api.get("/consultation/my-bookings");
+      const response = await api.get("/consultation/my-appointments", { params: { bookingType: "scheduled" } }).catch(() =>
+        api.get("/consultation/my-bookings")
+      );
       
-      if (response.data.success) {
-        const allData = response.data.data;
+      if (response.data.success || response.status === 200) {
+        const allData = extractList(response);
         
         const mappedData = allData
-          .filter((item: any) => 
-            (item.bookingType?.toLowerCase() === "scheduled" || item.bookingType?.toLowerCase() === "schedule") && 
-            item.status?.toLowerCase() !== "completed" && 
-            item.status?.toLowerCase() !== "rejected" &&
-            item.status?.toLowerCase() !== "cancelled"
-          )
+          .filter((item: any) => {
+            const bType = item.bookingType?.toLowerCase();
+            const isSchedule = bType === "scheduled" || bType === "schedule" || (!bType && (item.date || item.startTime)) || bType !== "callback";
+            const st = item.status?.toLowerCase();
+            return isSchedule && st !== "completed" && st !== "rejected" && st !== "cancelled";
+          })
           .map((item: any) => {
-            let dateStr = new Date(item.date).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            let timeDisplay = `${item.startTime} - ${item.endTime}, ${dateStr}`;
-            let scheduledAt = new Date(item.createdAt).getTime();
-            if (item.date && item.startTime) {
-              const datePart = item.date.split('T')[0];
-              const timeMatch = item.startTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
-              if (timeMatch) {
-                let hours = parseInt(timeMatch[1], 10);
-                const mins = timeMatch[2];
-                const ampm = timeMatch[3]?.toUpperCase();
-                if (ampm === 'PM' && hours < 12) hours += 12;
-                if (ampm === 'AM' && hours === 12) hours = 0;
-                const paddedHours = hours.toString().padStart(2, '0');
-                scheduledAt = new Date(`${datePart}T${paddedHours}:${mins}:00`).getTime();
-              } else {
-                scheduledAt = new Date(`${datePart}T${item.startTime}:00`).getTime();
+            let dateStr = item.date ? new Date(item.date).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : (item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : "Scheduled");
+            let start = item.startTime || "";
+            let end = item.endTime || "";
+            let timeDisplay = start && end ? `${start} - ${end}, ${dateStr}` : (start ? `${start}, ${dateStr}` : dateStr);
+            let scheduledAt = item.createdAt ? new Date(item.createdAt).getTime() : Date.now();
+
+            try {
+              if (item.date && item.startTime) {
+                const datePart = typeof item.date === 'string' ? item.date.split('T')[0] : format(new Date(item.date), 'yyyy-MM-dd');
+                const timeMatch = item.startTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if (timeMatch) {
+                  let hours = parseInt(timeMatch[1], 10);
+                  const mins = timeMatch[2];
+                  const ampm = timeMatch[3]?.toUpperCase();
+                  if (ampm === 'PM' && hours < 12) hours += 12;
+                  if (ampm === 'AM' && hours === 12) hours = 0;
+                  const paddedHours = hours.toString().padStart(2, '0');
+                  scheduledAt = new Date(`${datePart}T${paddedHours}:${mins}:00`).getTime();
+                } else {
+                  scheduledAt = new Date(`${datePart}T${item.startTime}:00`).getTime();
+                }
               }
+            } catch (err) {
+              console.warn("Date parse error:", err);
             }
+
             return {
-              id: item._id,
+              id: item._id || item.id,
               tabType: "Schedule" as const,
-              name: item.user?.name || "Guest User",
-              image: getImageUrl(item.user?.image || item.user?.avatar),
+              name: item.user?.name || item.patient?.name || item.userName || "Guest User",
+              image: getImageUrl(item.user?.image || item.user?.avatar || item.patient?.image),
               requestType: "Scheduled",
               time: timeDisplay,
               scheduledAt,
-              notes: item.notes || "No additional notes.",
-              status: item.status,
+              notes: item.notes || item.reason || item.description || "No additional notes.",
+              status: (item.status || "pending").toLowerCase(),
             };
           });
         

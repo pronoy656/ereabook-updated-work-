@@ -16,11 +16,38 @@ export default function UpcomingConsult() {
     useEffect(() => {
         const fetchUpcoming = async () => {
             try {
-                const response = await api.get('/consultation/my-bookings');
-                const allData = response.data?.data || response.data;
-                if (Array.isArray(allData)) {
-                    setAllConsultations(allData);
+                const [bookingsRes, appointmentsRes] = await Promise.allSettled([
+                    api.get('/consultation/my-bookings'),
+                    api.get('/consultation/my-appointments?tab=history')
+                ]);
+
+                const extractList = (res: any): any[] => {
+                    if (!res?.data) return [];
+                    const p = res.data.data !== undefined ? res.data.data : res.data;
+                    if (Array.isArray(p)) return p;
+                    if (Array.isArray(p?.bookings)) return p.bookings;
+                    if (Array.isArray(p?.appointments)) return p.appointments;
+                    return [];
+                };
+
+                let combined: any[] = [];
+                if (bookingsRes.status === 'fulfilled') {
+                    combined = [...combined, ...extractList(bookingsRes.value)];
                 }
+                if (appointmentsRes.status === 'fulfilled') {
+                    combined = [...combined, ...extractList(appointmentsRes.value)];
+                }
+
+                // Deduplicate by ID
+                const seen = new Set<string>();
+                const uniqueList = combined.filter((item: any) => {
+                    const id = item._id || item.id;
+                    if (!id || seen.has(id)) return false;
+                    seen.add(id);
+                    return true;
+                });
+
+                setAllConsultations(uniqueList);
             } catch (err) {
                 console.error("Failed to fetch consultations:", err);
             } finally {

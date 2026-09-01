@@ -258,13 +258,10 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
 
        // Listen for Agora DataStream / WebSocket live transcription messages from Agora STT bot
        client.on('stream-message', async (uid, payload) => {
-         console.log(`📥 Received stream message from UID: ${uid}`);
-         
-         // 1. Only process if it's from the STT bot (UID 9001)
-         if (uid.toString() !== '9001') {
-           console.log(`ℹ️ Ignoring stream message from non-STT source (UID: ${uid})`);
-           return;
-         }
+         console.log(
+           `%c📥 AGORA STREAM-MESSAGE FIRED: Received RTC stream message from UID ${uid}`,
+           'color: #ffffff; background: #8B5CF6; font-weight: bold; font-size: 12px; padding: 3px; border-radius: 4px;'
+         );
 
          let result = null;
 
@@ -281,16 +278,14 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
            }
            
            const json = JSON.parse(text);
-           // console.log('RAW STT JSON:', json); // Uncomment if needed for debugging
            
            if (json && typeof json === 'object') {
-             // Handle potential Agora JSON formats
-             const transcriptData = json.transcript || json; // fallback to root if transcript key is absent
+             const transcriptData = json.transcript || json;
 
              result = {
-               uid: transcriptData.uid || transcriptData.speakerUid,
-               text: transcriptData.text || (transcriptData.words && Array.isArray(transcriptData.words) ? transcriptData.words.map((w: any) => w.text).join('') : ''),
-               isFinal: transcriptData.isFinal !== undefined ? transcriptData.isFinal : (transcriptData.is_final || false),
+               uid: transcriptData.uid || transcriptData.speakerUid || transcriptData.speaker_uid || 1001,
+               text: transcriptData.text || (transcriptData.words && Array.isArray(transcriptData.words) ? transcriptData.words.map((w: any) => typeof w === 'string' ? w : w.text).join(' ') : ''),
+               isFinal: transcriptData.isFinal !== undefined ? transcriptData.isFinal : (transcriptData.is_final !== undefined ? transcriptData.is_final : true),
                startMs: transcriptData.offset || transcriptData.timestamp || transcriptData.startMs || Date.now()
              };
            }
@@ -299,36 +294,26 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
            result = parseAgoraSttPayload(payload);
          }
 
-         console.log('📥 STT BOT PARSED:', result);
+         if (result?.text) {
+           console.log(
+             `%c🗣️ STT PARSED TEXT: "${result.text}" (Speaker UID: ${result.uid})`,
+             'color: #ffffff; background: #059669; font-weight: bold; font-size: 13px; padding: 4px; border-radius: 4px;'
+           );
+         }
 
          if (consultationId && result?.text) {
-           // Forward to backend → persists + fans out via Socket.IO transcript:new
-           // The socket event is the single source of truth for the UI — no optimistic dispatch needed.
            api.post(`/transcription/${consultationId}/ingest`, {
-             uid: result.uid,
+             uid: result.uid || 1001,
              text: result.text,
-             isFinal: result.isFinal,
-             timestamp: result.startMs,
+             isFinal: result.isFinal ?? true,
+             timestamp: result.startMs || Date.now(),
            }).catch((err: any) => {
-             console.error('Failed to relay transcript chunk:', err);
+             console.warn('Failed to relay transcript chunk:', err?.message || err);
            });
          }
       });
 
       try {
-        // Native stream check requested by USER to verify camera/mic access before Agora joins
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
-
-          console.log("✅ STREAM GOT:", stream);
-          stream.getTracks().forEach(track => track.stop());
-        } catch (err: any) {
-          console.log("❌ CAMERA ERROR:", err?.name, err?.message);
-        }
-
         if (!appId || !channel) {
           console.warn("Agora connection aborted: Missing required credentials.", { appId, channel, token });
           return;
@@ -345,60 +330,78 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
         if (consultationId) {
           api.post(`/transcription/${consultationId}/start`, { channelName: channel })
             .then(() => console.log('%c✅ RTT TRANSCRIPTION SERVICE STARTED', 'color:#fff;background:#059669;font-weight:bold;padding:4px;border-radius:4px;'))
-            .catch((err: any) => console.warn('⚠️ Could not start RTT transcription service:', err?.response?.data || err.message));
+            .catch((err: any) => console.warn('⚠️ RTT transcription start skipped or unavailable:', err?.response?.data?.message || err.message));
         }
 
-        // Setup local tracks safely maintaining refs (Works completely offline!)
-        try {
-
-          if (!localAudioRef.current) {
-            const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        // Setup local microphone track safely with Noise Suppression (ANS) & Echo Cancellation (AEC)
+        if (!localAudioRef.current) {
+          try {
+            const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+              AEC: true,
+              ANS: true,
+              AGC: true,
+            });
             localAudioRef.current = audioTrack;
             setLocalAudioTrack(audioTrack);
+          } catch (audioErr: any) {
+            console.error("Microphone Device Error:", audioErr);
+            setMediaError("Could not access microphone. Please check permissions.");
           }
-
-          if (!localVideoRef.current) {
-            const videoTrack = await AgoraRTC.createCameraVideoTrack();
-            await videoTrack.setMuted(true);
-            localVideoRef.current = videoTrack;
-            setLocalVideoTrack(videoTrack);
-          }
-          setMediaError(null);
-        } catch (mediaErr: any) {
-          console.error("Media Device Error:", mediaErr);
-          let errorMsg = "Could not access camera or microphone. Please ensure permissions are granted.";
-          if (typeof window !== 'undefined' && window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            errorMsg = "Camera/Microphone access is blocked by your browser because you are accessing via HTTP on a non-localhost IP. Please access via http://localhost:3000 or use HTTPS.";
-          } else if (mediaErr.name === 'NotAllowedError' || mediaErr.name === 'PermissionDeniedError') {
-            errorMsg = "Camera or Microphone permission was denied by your browser. Please click the site settings icon in the URL bar and allow access.";
-          } else if (mediaErr.name === 'NotFoundError' || mediaErr.name === 'DeviceNotFoundError') {
-            errorMsg = "No camera or microphone device found on your system. Please plug in a device and retry.";
-          } else if (mediaErr.name === 'NotReadableError' || mediaErr.name === 'TrackStartError') {
-            errorMsg = "Your camera or microphone is currently busy or being used by another application (e.g., Zoom, Teams). Please close other apps and retry.";
-          }
-          setMediaError(errorMsg);
         }
 
-        // Ensure not attempting to publish if already published or running locally offline
+        // Setup local camera video track ONLY if video is NOT turned off initially
+        if (!isVideoOff && !localVideoRef.current) {
+          try {
+            const videoTrack = await AgoraRTC.createCameraVideoTrack();
+            localVideoRef.current = videoTrack;
+            setLocalVideoTrack(videoTrack);
+            setMediaError(null);
+          } catch (videoErr: any) {
+            console.warn("Camera Device Warning (Video track not created):", videoErr);
+            let videoErrorMsg = "Camera could not be started.";
+            if (typeof window !== 'undefined' && window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+              videoErrorMsg = "Camera access is blocked on HTTP. Please access via http://localhost:3000 or use HTTPS.";
+            } else if (videoErr?.name === 'NotAllowedError' || videoErr?.name === 'PermissionDeniedError') {
+              videoErrorMsg = "Camera permission was denied. Please allow camera access in browser settings.";
+            } else if (videoErr?.name === 'NotFoundError' || videoErr?.name === 'DeviceNotFoundError') {
+              videoErrorMsg = "No camera hardware detected on your system.";
+            } else if (videoErr?.name === 'NotReadableError' || videoErr?.code === 'NOT_READABLE' || videoErr?.message?.includes('NotReadableError') || videoErr?.message?.includes('Could not start video source')) {
+              videoErrorMsg = "Your camera is currently busy or being used by another application (e.g., Zoom, Teams, or another browser tab). Voice call is connected.";
+            }
+            setMediaError(videoErrorMsg);
+          }
+        }
+
+        // Ensure attempting publish ONLY if connected to channel
         const publishPayload = [];
         if (localAudioRef.current) publishPayload.push(localAudioRef.current);
         if (localVideoRef.current) publishPayload.push(localVideoRef.current);
 
-        if (publishPayload.length > 0) {
-          await client.publish(publishPayload);
+        if (publishPayload.length > 0 && client.connectionState === 'CONNECTED') {
+          try {
+            await client.publish(publishPayload);
+            console.log("✅ Local tracks published successfully.");
+          } catch (pubErr: any) {
+            console.warn("Publish error caught (non-fatal):", pubErr);
+          }
         }
 
         if (mounted) setJoined(true);
-      } catch (err) {
+      } catch (err: any) {
         // Protect against strict-double mount aborts
         console.warn("Agora connection cycle error:", err);
+        if (mounted) {
+          const errStr = err?.message || err?.code || String(err);
+          if (errStr.includes('CAN_NOT_GET_GATEWAY_SERVER') || errStr.includes('no active status')) {
+            setMediaError("Agora Video Gateway server returned 'no active status'. Please verify that your Agora App ID and Primary Certificate are active, or toggle your Availability status to active.");
+          }
+        }
       }
     };
 
-    // Always run initCall so native camera/mic checks execute immediately
-    setTimeout(() => {
-      if (mounted) initCall();
-    }, 50);
+    if (appId && channel) {
+      initCall();
+    }
 
     return () => {
       mounted = false;
@@ -427,6 +430,36 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId, channel, token, uid, consultationId]); // Ignore track deps to avoid rebuild loops
+
+  // Dedicated reactive effect to ensure local audio and video tracks are published to the channel when ready
+  useEffect(() => {
+    const client = clientRef.current;
+    if (!client || connectionState !== 'CONNECTED') return;
+
+    const publishTracks = async () => {
+      const publishedTracks = client.localTracks || [];
+
+      if (localAudioTrack && !publishedTracks.includes(localAudioTrack)) {
+        try {
+          await client.publish([localAudioTrack]);
+          console.log("%c🎤 CONSULTANT AUDIO TRACK PUBLISHED TO AGORA CHANNEL SUCCESSFULLY!", "color: #ffffff; background: #059669; font-weight: bold; font-size: 13px; padding: 4px; border-radius: 4px;");
+        } catch (err: any) {
+          console.warn("Notice: Failed to publish audio track:", err?.message || err);
+        }
+      }
+
+      if (localVideoTrack && !publishedTracks.includes(localVideoTrack)) {
+        try {
+          await client.publish([localVideoTrack]);
+          console.log("%c🎥 CONSULTANT VIDEO TRACK PUBLISHED TO AGORA CHANNEL SUCCESSFULLY!", "color: #ffffff; background: #2563EB; font-weight: bold; font-size: 13px; padding: 4px; border-radius: 4px;");
+        } catch (err: any) {
+          console.warn("Notice: Failed to publish video track:", err?.message || err);
+        }
+      }
+    };
+
+    publishTracks();
+  }, [connectionState, localAudioTrack, localVideoTrack]);
 
   // Periodic audit and debug logs
   useEffect(() => {
@@ -462,6 +495,22 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
         setIsVideoOff(prev => !prev);
       } catch (e) {
         console.error("Failed to toggle video", e);
+      }
+    } else {
+      try {
+        const AgoraMod = await import('agora-rtc-sdk-ng');
+        const AgoraRTC = AgoraMod.default;
+        const videoTrack = await AgoraRTC.createCameraVideoTrack();
+        localVideoRef.current = videoTrack;
+        setLocalVideoTrack(videoTrack);
+        setIsVideoOff(false);
+        if (clientRef.current && clientRef.current.connectionState === 'CONNECTED') {
+          await clientRef.current.publish([videoTrack]);
+        }
+        setMediaError(null);
+      } catch (err: any) {
+        console.error("Failed to acquire camera on toggle:", err);
+        setMediaError("Could not start camera. Please verify camera is available and not in use by another app.");
       }
     }
   };

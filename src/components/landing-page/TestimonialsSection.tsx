@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react';
 
 import { useLandingLanguage } from '@/context/LandingLanguageContext';
+import ScrollReveal from '@/components/landing-page/ScrollReveal';
 
 const TESTIMONIALS_EN = [
   {
@@ -123,7 +124,7 @@ export default function TestimonialsSection() {
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10 lg:gap-14">
           
           {/* Left Info Column */}
-          <div className="lg:w-[32%] flex flex-col items-start shrink-0">
+          <ScrollReveal variant="fade-right" duration={750} className="lg:w-[32%] flex flex-col items-start shrink-0">
             <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold tracking-wider uppercase mb-5">
               {t('testimonials.badge')}
             </div>
@@ -184,10 +185,10 @@ export default function TestimonialsSection() {
                 Happy Clients
               </span>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Right Interactive Drag & Scroll Testimonial Cards Track */}
-          <div className="lg:w-[68%] w-full overflow-hidden relative">
+          <ScrollReveal variant="fade-left" delay={200} className="lg:w-[68%] w-full overflow-hidden relative">
             <div 
               ref={testSliderRef}
               onScroll={handleTestScroll}
@@ -228,7 +229,7 @@ export default function TestimonialsSection() {
                 </div>
               ))}
             </div>
-          </div>
+          </ScrollReveal>
 
         </div>
 

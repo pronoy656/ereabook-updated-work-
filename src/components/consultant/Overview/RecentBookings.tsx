@@ -16,30 +16,70 @@ export function RecentBookings() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await api.get('/consultant/recent-bookings?limit=5');
-        const data = response.data?.data;
-        if (Array.isArray(data)) {
-          if (data.length > 0) {
-            const formatted = data.map((b: any) => {
-              const dateObj = new Date(b.scheduledAt);
-              const formattedDate = dateObj.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-              const formattedTime = dateObj.toLocaleTimeString(locale === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
-              
-              return {
-                id: b.consultationId || Math.random().toString(),
-                client: { 
-                  name: b.clientName || 'Client', 
-                  avatar: b.clientImage || '' 
-                },
-                datetime: `${formattedDate} • ${formattedTime}`,
-                rawStatus: b.status ? b.status.toLowerCase() : 'pending',
-                status: b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : 'Pending'
-              };
-            });
-            setBookings(formatted.slice(0, 5));
-          } else {
-            setBookings([]);
-          }
+        const [recentRes, bookingsRes, appointmentsRes] = await Promise.allSettled([
+          api.get('/consultant/recent-bookings?limit=10'),
+          api.get('/consultation/my-bookings'),
+          api.get('/consultation/my-appointments?tab=history')
+        ]);
+
+        let rawList: any[] = [];
+        if (recentRes.status === 'fulfilled' && Array.isArray(recentRes.value.data?.data)) {
+          rawList = [...recentRes.value.data.data];
+        }
+
+        const extractList = (res: any): any[] => {
+          if (!res?.data) return [];
+          const p = res.data.data !== undefined ? res.data.data : res.data;
+          if (Array.isArray(p)) return p;
+          if (Array.isArray(p?.bookings)) return p.bookings;
+          if (Array.isArray(p?.appointments)) return p.appointments;
+          return [];
+        };
+
+        if (bookingsRes.status === 'fulfilled') {
+          rawList = [...rawList, ...extractList(bookingsRes.value)];
+        }
+        if (appointmentsRes.status === 'fulfilled') {
+          rawList = [...rawList, ...extractList(appointmentsRes.value)];
+        }
+
+        // Deduplicate by ID
+        const seen = new Set<string>();
+        const uniqueItems = rawList.filter((item: any) => {
+          const id = item._id || item.id || item.consultationId;
+          if (!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+
+        if (uniqueItems.length > 0) {
+          const formatted = uniqueItems.map((b: any) => {
+            const rawDate = b.scheduledAt || b.date || b.createdAt || Date.now();
+            const dateObj = new Date(rawDate);
+            const formattedDate = dateObj.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const formattedTime = b.startTime && b.endTime ? `${b.startTime} - ${b.endTime}` : dateObj.toLocaleTimeString(locale === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            const clientName = b.clientName || b.user?.name || b.patient?.name || 'Client';
+            const clientImage = b.clientImage || b.user?.image || b.user?.avatar || '';
+
+            return {
+              id: b._id || b.id || b.consultationId || Math.random().toString(),
+              client: { 
+                name: clientName, 
+                avatar: getImageUrl(clientImage) || clientImage
+              },
+              datetime: `${formattedDate} • ${formattedTime}`,
+              rawStatus: b.status ? b.status.toLowerCase() : 'completed',
+              status: b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : 'Completed',
+              rawTime: dateObj.getTime()
+            };
+          });
+
+          // Sort newest first
+          formatted.sort((a, b) => b.rawTime - a.rawTime);
+          setBookings(formatted.slice(0, 5));
+        } else {
+          setBookings([]);
         }
       } catch (error) {
         console.error("Failed to fetch recent bookings:", error);

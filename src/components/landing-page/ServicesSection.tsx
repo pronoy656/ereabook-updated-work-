@@ -8,6 +8,7 @@ import {
   MessageSquare, Sparkles, FileText, LineChart, Home, Clock
 } from 'lucide-react';
 import { useLandingLanguage } from '@/context/LandingLanguageContext';
+import ScrollReveal from '@/components/landing-page/ScrollReveal';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories', icon: LayoutGrid },
@@ -450,7 +451,7 @@ export default function ServicesSection() {
       {/* Consistent 4-Card Service Grid for Every Category */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 transition-all duration-300">
         
-        {currentServices.map((service) => {
+        {currentServices.map((service, idx) => {
           const Icon = service.icon;
 
           const translatedInfo = locale === 'de' && serviceTranslations[service.id] 
@@ -458,46 +459,47 @@ export default function ServicesSection() {
             : { title: service.title, description: service.description, bulletPoints: service.bulletPoints };
 
           return (
-            <div 
-              key={service.id} 
-              className={`bg-white rounded-3xl border border-slate-200 shadow-[0_4px_25px_rgba(15,23,42,0.04)] ${service.shadowHover} transition-all duration-300 overflow-hidden flex flex-col justify-between group`}
-            >
-              <div>
-                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
-                  <img 
-                    src={service.image} 
-                    alt={translatedInfo.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute top-3.5 right-3.5 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md">
-                    <Icon className={`w-5 h-5 ${service.iconColor}`} />
+            <ScrollReveal key={service.id} variant="fade-up" delay={idx * 100}>
+              <div 
+                className={`bg-white rounded-3xl border border-slate-200 shadow-[0_4px_25px_rgba(15,23,42,0.04)] ${service.shadowHover} hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full`}
+              >
+                <div>
+                  <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                    <img 
+                      src={service.image} 
+                      alt={translatedInfo.title} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                    />
+                    <div className="absolute top-3.5 right-3.5 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                      <Icon className={`w-5 h-5 ${service.iconColor}`} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug">{translatedInfo.title}</h3>
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed mb-5">{translatedInfo.description}</p>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-blue-600 transition-colors duration-200">{translatedInfo.title}</h3>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed mb-5">{translatedInfo.description}</p>
 
-                  <div className="space-y-2">
-                    {translatedInfo.bulletPoints.map((point, i) => (
-                      <div key={i} className="flex items-center gap-2 text-[12px] font-medium text-slate-600">
-                        <CheckCircle2 className={`w-4 h-4 ${service.checkColor} shrink-0`} />
-                        <span>{point}</span>
-                      </div>
-                    ))}
+                    <div className="space-y-2">
+                      {translatedInfo.bulletPoints.map((point, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[12px] font-medium text-slate-600">
+                          <CheckCircle2 className={`w-4 h-4 ${service.checkColor} shrink-0`} />
+                          <span>{point}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           );
         })}
 
       </div>
 
       {/* Can't find what you need? Banner */}
-      <div className="bg-gradient-to-r from-[#F5F8FE] via-white to-[#F5F8FE] rounded-3xl border border-slate-200 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mt-14 shadow-[0_4px_25px_rgba(15,23,42,0.03)]">
+      <div className="bg-gradient-to-r from-[#F5F8FE] via-white to-[#F5F8FE] rounded-3xl border border-slate-200 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mt-14 shadow-[0_4px_25px_rgba(15,23,42,0.03)] hover:shadow-lg transition-all duration-300">
         <div className="flex items-center gap-4 text-center sm:text-left">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-sm animate-pulse-slow">
             <ClipboardList className="w-6 h-6" />
           </div>
           <div className="flex flex-col">
@@ -514,10 +516,10 @@ export default function ServicesSection() {
 
         <Link 
           href="/#mobile-app"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl text-sm font-bold transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)] shrink-0 flex items-center gap-2 cursor-pointer"
+          className="bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95 text-white px-6 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-[0_4px_14px_rgba(37,99,235,0.25)] shrink-0 flex items-center gap-2 cursor-pointer group"
         >
           {locale === 'de' ? 'Mobile App herunterladen' : 'Download Mobile App'}
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
 

@@ -64,9 +64,17 @@ export default function SessionSidebar({ consultationDetails, consultationId, se
     return `${m}:${s}`;
   };
 
-  // Live Earnings calculation based on dynamic rate
+  // Live Earnings calculation based on dynamic rate:
+  // Charges per minute upfront / ceiling rounding:
+  // - 0s - 60s (00:00 - 01:00) when active: 1 minute rate
+  // - 61s - 120s (01:01 - 02:00): 2 minutes rate
+  // - 121s - 180s (02:01 - 03:00): 3 minutes rate
+  // - If client has not joined yet (0s), earnings = 0
   const rate = details.ratePerMinute ?? 1.0;
-  const earnings = (durationSec / 60) * rate;
+  const billableMinutes = hasRemoteUserJoined || durationSec > 0
+    ? Math.max(1, Math.ceil(durationSec / 60))
+    : 0;
+  const earnings = billableMinutes * rate;
 
   // Auto-scroll transcript
   useEffect(() => {

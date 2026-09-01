@@ -113,11 +113,7 @@ export default function ConsultantSettings() {
         formDataObj.append('image', selectedFile); // Assuming 'image' is the field name backend expects
       }
 
-      const response = await api.patch('/user/profile', formDataObj, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await api.patch('/user/profile', formDataObj);
 
       if (response.data.success) {
         setIsSaved(true);

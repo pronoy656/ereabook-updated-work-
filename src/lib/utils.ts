@@ -7,7 +7,11 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getImageUrl(imagePath?: string | null): string | undefined {
   if (!imagePath) return undefined;
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
+  
+  const normalizedPath = imagePath.replace(/\\/g, '/');
+  if (normalizedPath.startsWith('http') || normalizedPath.startsWith('data:') || normalizedPath.startsWith('blob:')) {
+    return normalizedPath;
+  }
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://10.10.7.106:5000/api/v1';
   let origin = 'http://10.10.7.106:5000';
@@ -18,5 +22,5 @@ export function getImageUrl(imagePath?: string | null): string | undefined {
     // Fallback handled
   }
   
-  return `${origin}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  return `${origin}${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`;
 }

@@ -20,14 +20,19 @@ export default function ProfileGuard({ children }: { children: React.ReactNode }
         if (response.data.success && response.data.data) {
           const profile = response.data.data;
           
+          // Helper to safely check non-empty string or object
+          const hasValue = (val: any) => {
+            if (val === null || val === undefined) return false;
+            if (typeof val === 'string') return val.trim() !== '';
+            if (typeof val === 'object') return Boolean(val._id || Object.keys(val).length > 0);
+            return Boolean(val);
+          };
+
           // Check if all mandatory fields are filled
           const isComplete = !!(
-            profile.name &&
-            profile.name.trim() !== '' &&
-            profile.email &&
-            profile.email.trim() !== '' &&
-            profile.consultancyType &&
-            profile.consultancyType.trim() !== '' &&
+            hasValue(profile.name) &&
+            hasValue(profile.email) &&
+            hasValue(profile.consultancyType) &&
             profile.perMinuteRate !== undefined &&
             profile.perMinuteRate !== null
           );

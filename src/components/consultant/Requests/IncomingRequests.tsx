@@ -40,8 +40,8 @@ const AcceptedActionState = ({ req }: { req: RequestData }) => {
   // If it's an Instant request and we're joining via popup, hide the manual Join Call button
   if (req.tabType === "Instant") {
     return (
-      <span className="text-emerald-600 text-[13px] font-bold uppercase tracking-wider bg-emerald-50 border border-emerald-200 px-6 py-2.5 rounded-xl text-center shadow-sm flex items-center justify-center gap-1.5">
-        <Check className="w-4 h-4" /> Accepted
+      <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/80 select-none cursor-default">
+        <Check className="w-3.5 h-3.5" /> Accepted
       </span>
     );
   }
@@ -67,94 +67,111 @@ export default function IncomingRequests() {
   const [counts, setCounts] = useState({ Schedule: 0, Callback: 0 });
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
+  const extractList = (res: any): any[] => {
+    if (!res?.data) return [];
+    const payload = res.data.data !== undefined ? res.data.data : res.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.appointments)) return payload.appointments;
+    if (Array.isArray(payload?.bookings)) return payload.bookings;
+    if (Array.isArray(payload?.results)) return payload.results;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+  };
+
+  const mapAppointmentItem = (item: any, currentTab: "Schedule" | "Callback"): RequestData => {
+    let timeDisplay = "Instant";
+    let scheduledAt = item.createdAt ? new Date(item.createdAt).getTime() : Date.now();
+
+    try {
+      if (item.date || item.startTime || currentTab === "Schedule" || item.bookingType?.toLowerCase() === "scheduled" || item.bookingType?.toLowerCase() === "schedule") {
+        const formattedDate = item.date ? format(new Date(item.date), 'MMM dd, yyyy') : (item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : "Scheduled");
+        const start = item.startTime || "";
+        const end = item.endTime || "";
+        timeDisplay = start && end ? `${start} - ${end}, ${formattedDate}` : (start ? `${start}, ${formattedDate}` : formattedDate);
+        
+        if (item.date && item.startTime) {
+          const datePart = typeof item.date === 'string' ? item.date.split('T')[0] : format(new Date(item.date), 'yyyy-MM-dd');
+          const timeMatch = item.startTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+          if (timeMatch) {
+            let hours = parseInt(timeMatch[1], 10);
+            const mins = timeMatch[2];
+            const ampm = timeMatch[3]?.toUpperCase();
+            if (ampm === 'PM' && hours < 12) hours += 12;
+            if (ampm === 'AM' && hours === 12) hours = 0;
+            const paddedHours = hours.toString().padStart(2, '0');
+            scheduledAt = new Date(`${datePart}T${paddedHours}:${mins}:00`).getTime();
+          } else {
+            scheduledAt = new Date(`${datePart}T${item.startTime}:00`).getTime();
+          }
+        }
+      } else if (currentTab === "Callback" || item.bookingType?.toLowerCase() === "callback") {
+        timeDisplay = item.preferredWindow || item.time || (item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy - hh:mm a') : "Today");
+      }
+    } catch (err) {
+      console.warn("Date parsing error for item:", item, err);
+      timeDisplay = item.startTime || "Scheduled";
+    }
+
+    return {
+      id: item._id || item.id,
+      tabType: currentTab,
+      name: item.user?.name || item.patient?.name || item.userName || "Guest User",
+      image: getImageUrl(item.user?.image || item.user?.avatar || item.patient?.image),
+      requestType: (item.bookingType || (currentTab === "Callback" ? "Callback" : "Scheduled")).charAt(0).toUpperCase() + (item.bookingType || (currentTab === "Callback" ? "Callback" : "Scheduled")).slice(1),
+      time: timeDisplay,
+      scheduledAt,
+      notes: item.notes || item.reason || item.description || "No additional notes.",
+      status: (item.status || "pending").toLowerCase(),
+    };
+  };
+
   const refreshData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       
-      const response = await api.get("/consultation/my-bookings");
-      
-      if (response.data.success) {
-        const allData = response.data.data;
-        
-        // 1. Update Counts (all that are not yet accepted, confirmed, completed, or rejected)
-        const newCounts = {
-          Schedule: allData.filter((r: any) => 
-            (r.bookingType?.toLowerCase() === "scheduled" || r.bookingType?.toLowerCase() === "schedule") && 
-            r.status?.toLowerCase() !== "accepted" && 
-            r.status?.toLowerCase() !== "confirmed" && 
-            r.status?.toLowerCase() !== "completed" && 
-            r.status?.toLowerCase() !== "rejected" &&
-            r.status?.toLowerCase() !== "cancelled"
-          ).length,
-          Callback: allData.filter((r: any) => 
-            r.bookingType?.toLowerCase() === "callback" && 
-            r.status?.toLowerCase() !== "accepted" && 
-            r.status?.toLowerCase() !== "confirmed" && 
-            r.status?.toLowerCase() !== "completed" && 
-            r.status?.toLowerCase() !== "rejected" &&
-            r.status?.toLowerCase() !== "cancelled"
-          ).length,
-        };
-        setCounts(newCounts);
+      const activeParam = activeTab === "Schedule" ? "scheduled" : "callback";
+      const otherParam = activeTab === "Schedule" ? "callback" : "scheduled";
 
-        // 2. Filter data for the current active tab
-        const bookingTypeMap: any = {
-          Instant: ["instant"],
-          Schedule: ["scheduled", "schedule"],
-          Callback: ["callback"]
-        };
-        
-        const currentTabTypes = bookingTypeMap[activeTab];
-        
-        const mappedData = allData
-          .filter((item: any) => 
-            currentTabTypes.includes(item.bookingType?.toLowerCase()) &&
-            item.status?.toLowerCase() !== "completed" && 
-            item.status?.toLowerCase() !== "rejected" &&
-            item.status?.toLowerCase() !== "cancelled"
-          )
-          .map((item: any) => {
-            let timeDisplay = "Instant";
-            let scheduledAt = new Date(item.createdAt).getTime();
+      // Fetch active tab appointments and other tab count
+      const [activeRes, otherRes] = await Promise.allSettled([
+        api.get(`/consultation/my-appointments`, { params: { bookingType: activeParam } }).catch(() =>
+          api.get(`/consultation/my-bookings`)
+        ),
+        api.get(`/consultation/my-appointments`, { params: { bookingType: otherParam } }).catch(() =>
+          api.get(`/consultation/my-bookings`)
+        ),
+      ]);
 
-            if (item.bookingType?.toLowerCase() === "scheduled" || item.bookingType?.toLowerCase() === "schedule") {
-              timeDisplay = `${item.startTime} - ${item.endTime}, ${format(new Date(item.date), 'MMM dd, yyyy')}`;
-              if (item.date && item.startTime) {
-                const datePart = item.date.split('T')[0];
-                const timeMatch = item.startTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
-                if (timeMatch) {
-                  let hours = parseInt(timeMatch[1], 10);
-                  const mins = timeMatch[2];
-                  const ampm = timeMatch[3]?.toUpperCase();
-                  if (ampm === 'PM' && hours < 12) hours += 12;
-                  if (ampm === 'AM' && hours === 12) hours = 0;
-                  const paddedHours = hours.toString().padStart(2, '0');
-                  scheduledAt = new Date(`${datePart}T${paddedHours}:${mins}:00`).getTime();
-                } else {
-                  scheduledAt = new Date(`${datePart}T${item.startTime}:00`).getTime();
-                }
-              }
-            } else if (item.bookingType?.toLowerCase() === "callback") {
-              timeDisplay = item.preferredWindow || "Today";
-            }
+      let activeItems: any[] = [];
+      let otherItems: any[] = [];
 
-            return {
-              id: item._id,
-              tabType: activeTab,
-              name: item.user?.name || "Guest User",
-              image: getImageUrl(item.user?.image || item.user?.avatar),
-              requestType: (item.bookingType || "Request").charAt(0).toUpperCase() + (item.bookingType || "Request").slice(1),
-              time: timeDisplay,
-              scheduledAt,
-              notes: item.notes || "No additional notes.",
-              status: item.status,
-            };
-          });
-        
-        setRequests(mappedData);
+      if (activeRes.status === 'fulfilled') {
+        activeItems = extractList(activeRes.value);
       }
+      if (otherRes.status === 'fulfilled') {
+        otherItems = extractList(otherRes.value);
+      }
+
+      // Update Counts
+      const newCounts = {
+        Schedule: activeTab === "Schedule" ? activeItems.length : otherItems.length,
+        Callback: activeTab === "Callback" ? activeItems.length : otherItems.length,
+      };
+      setCounts(newCounts);
+
+      // Map requests for current tab
+      const mappedData = activeItems.map((item: any) => mapAppointmentItem(item, activeTab));
+      
+      // Sort: pending first, then by scheduled date/created date descending
+      mappedData.sort((a: any, b: any) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        return (b.scheduledAt || 0) - (a.scheduledAt || 0);
+      });
+
+      setRequests(mappedData);
     } catch (error: any) {
-      if (!silent) toast.error(error.response?.data?.message || "Failed to fetch bookings");
+      if (!silent) toast.error(error.response?.data?.message || "Failed to fetch appointments");
       console.error("Fetch Error:", error);
     } finally {
       if (!silent) setLoading(false);
@@ -206,9 +223,46 @@ export default function IncomingRequests() {
 
   const handleInstantAccept = async (id: string) => {
     // For instant requests, we accept, confirm, and instantly route to the call page
+    setProcessing({ id, type: 'accept' });
     const success = await handleStatusUpdate(id, "accepted", "accept", false);
     if (success) {
       await handleStatusUpdate(id, "confirmed", "accept", false);
+      try {
+        let createRes = await api.post('/video-session/create', { consultationId: id }).catch(() => null);
+        let resData = createRes?.data?.data || createRes?.data;
+        let sessionId = resData?.sessionId || resData?.id || resData?._id;
+        
+        if (!sessionId) {
+          const listRes = await api.get('/video-session').catch(() => null);
+          const sessions = listRes?.data?.data || listRes?.data;
+          if (Array.isArray(sessions)) {
+            const existing = sessions.find((s: any) => s.consultation === id || s.consultation?._id === id || s.consultationId === id);
+            if (existing) sessionId = existing.sessionId || existing.id || existing._id;
+          }
+        }
+        
+        if (sessionId) {
+          const joinRes = await api.post('/video-session/join', { sessionId }).catch(() => null);
+          const joinData = joinRes?.data?.data || joinRes?.data;
+          const token = joinData?.token || resData?.token;
+          const channelName = joinData?.channelName || resData?.channelName;
+          const uid = joinData?.uid || resData?.uid;
+          
+          if (token && channelName) {
+            const queryParams = new URLSearchParams({
+              consultationId: id,
+              channelName,
+              token,
+              uid: (uid || 2001).toString(),
+              sessionId
+            });
+            router.push(`/call?${queryParams.toString()}`);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Pre-fetch video session error in table accept:", e);
+      }
       router.push(`/call?consultationId=${id}`);
     } else {
       setProcessing(null);
@@ -221,7 +275,24 @@ export default function IncomingRequests() {
       const response = await api.post(`/consultation/initiate-callback/${id}`);
       if (response.data.success) {
         toast.success(response.data.message || "Callback initiated successfully!");
-        router.push(`/call?consultationId=${id}&isCallback=true`);
+        
+        const resData = response.data?.data || response.data;
+        const sessionId = resData?.sessionId || resData?.id || resData?._id || resData?.session?.sessionId || resData?.session?._id;
+        const channelName = resData?.channelName || resData?.session?.channelName;
+        const token = resData?.token || resData?.session?.token;
+        const uid = resData?.uid || resData?.session?.uid;
+
+        const queryParams = new URLSearchParams({
+          consultationId: id,
+          isCallback: "true"
+        });
+
+        if (sessionId) queryParams.set("sessionId", sessionId);
+        if (channelName) queryParams.set("channelName", channelName);
+        if (token) queryParams.set("token", token);
+        if (uid) queryParams.set("uid", uid.toString());
+
+        router.push(`/call?${queryParams.toString()}`);
       }
     } catch (error: any) {
       console.error("[Callback Init Error]:", error);
@@ -358,12 +429,16 @@ export default function IncomingRequests() {
 
                 <div className="flex flex-row md:flex-col gap-3 shrink-0 self-start md:self-center w-full md:w-auto">
                   {req.status?.toLowerCase() === "completed" ? (
-                    <span className="text-emerald-600 text-[13px] font-bold uppercase tracking-wider bg-emerald-50 border border-emerald-200 px-6 py-2.5 rounded-xl text-center shadow-sm flex items-center justify-center gap-1.5 animate-in zoom-in duration-300">
-                      <Check className="w-4 h-4" /> Completed
+                    <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/80 select-none cursor-default">
+                      <Check className="w-3.5 h-3.5" /> Completed
                     </span>
                   ) : req.status?.toLowerCase() === "rejected" ? (
-                    <span className="text-red-600 text-[13px] font-bold uppercase tracking-wider bg-red-50 border border-red-200 px-6 py-2.5 rounded-xl text-center shadow-sm flex items-center justify-center gap-1.5 animate-in zoom-in duration-300">
-                      <X className="w-4 h-4" /> Rejected
+                    <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-rose-50 text-rose-700 border border-rose-200/80 select-none cursor-default">
+                      <X className="w-3.5 h-3.5" /> Rejected
+                    </span>
+                  ) : req.status?.toLowerCase() === "cancelled" ? (
+                    <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-slate-100 text-slate-600 border border-slate-200 select-none cursor-default">
+                      <X className="w-3.5 h-3.5" /> Cancelled
                     </span>
                   ) : req.status === "accepted" || req.status === "confirmed" ? (
                       <AcceptedActionState req={req} />

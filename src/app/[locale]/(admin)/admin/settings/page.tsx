@@ -67,9 +67,7 @@ export default function AdminSettings() {
         formDataObj.append('image', selectedFile);
       }
 
-      const response = await api.patch('/user/profile', formDataObj, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.patch('/user/profile', formDataObj);
 
       if (response.data.success) {
         setIsSaved(true);

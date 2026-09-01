@@ -8,6 +8,14 @@ import { useAuth } from '@/context/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface RecurringHoursProps {
   availabilityData: Record<string, TimeSlot[]>;
@@ -37,6 +45,11 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const { user } = useAuth();
+
+  // Delete Confirmation Modal State
+  const [selectedSlotToDelete, setSelectedSlotToDelete] = useState<{ id?: string; index: number; date: string; time: string } | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Simple calendar math
   const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -105,6 +118,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
         
         if (response.data.success) {
           const fetchedSlots = response.data.data.map((slot: any) => ({
+            id: slot._id || slot.id,
             start: slot.startTime,
             end: slot.endTime
           }));
@@ -209,11 +223,53 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
 
   const handleRemoveSlot = (index: number) => {
     if (!selectedDateKey) return;
-    setAvailabilityData(prev => {
-      const daySlots = [...(prev[selectedDateKey] || [])];
-      daySlots.splice(index, 1);
-      return { ...prev, [selectedDateKey]: daySlots };
+    const currentSlots = availabilityData[selectedDateKey] || [];
+    const slot = currentSlots[index];
+    if (!slot) return;
+
+    // Open confirmation modal for both saved and unsaved slots
+    setSelectedSlotToDelete({
+      id: slot.id,
+      index,
+      date: selectedDateKey,
+      time: `${slot.start} - ${slot.end}`
     });
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedSlotToDelete || !selectedDateKey) return;
+
+    if (selectedSlotToDelete.id) {
+      setDeleting(true);
+      try {
+        const response = await api.delete(`/consultation/unavailability/${selectedSlotToDelete.id}`);
+        if (response.data.success) {
+          toast.success(response.data.message || t('delete_slot_success'));
+          
+          setAvailabilityData(prev => {
+            const daySlots = [...(prev[selectedDateKey] || [])];
+            daySlots.splice(selectedSlotToDelete.index, 1);
+            return { ...prev, [selectedDateKey]: daySlots };
+          });
+        }
+      } catch (error: any) {
+        console.error("Error deleting unavailable slot:", error);
+        toast.error(error.response?.data?.message || t('delete_slot_error'));
+      } finally {
+        setDeleting(false);
+        setDeleteModalOpen(false);
+        setSelectedSlotToDelete(null);
+      }
+    } else {
+      setAvailabilityData(prev => {
+        const daySlots = [...(prev[selectedDateKey] || [])];
+        daySlots.splice(selectedSlotToDelete.index, 1);
+        return { ...prev, [selectedDateKey]: daySlots };
+      });
+      setDeleteModalOpen(false);
+      setSelectedSlotToDelete(null);
+    }
   };
 
   const isSelectedToday = selectedDate 
@@ -410,6 +466,55 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
         )}
       </div>
 
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl p-6">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mx-auto sm:mx-0">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-slate-900">
+              {t('delete_slot_title')}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 font-normal leading-relaxed">
+              {t('delete_slot_confirm')}
+              {selectedSlotToDelete && (
+                <span className="block mt-2 font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                  {selectedSlotToDelete.date} ({selectedSlotToDelete.time})
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4">
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => setDeleteModalOpen(false)}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={handleConfirmDelete}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm shadow-rose-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{t('deleting')}</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  <span>{t('delete_slot_button')}</span>
+                </>
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

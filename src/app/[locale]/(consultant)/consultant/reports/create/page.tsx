@@ -1,19 +1,25 @@
 "use client";
 
-import { Send, Image as ImageIcon, Link as LinkIcon, Plus, X, FileText, Paperclip, ArrowLeft } from "lucide-react";
+import { 
+    Send, Image as ImageIcon, Link as LinkIcon, Plus, X, ArrowLeft, Loader2, 
+    ListOrdered, ShoppingBag, FileText, Trash2, CheckCircle2, Upload
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+
+interface ProductInput {
+    name: string;
+    price: string;
+    image: string;
+    url: string;
+}
 
 function CreateReportContent() {
     const router = useRouter();
@@ -26,6 +32,24 @@ function CreateReportContent() {
     const [consultationId, setConsultationId] = useState(initialConsultationId);
     const [conversation, setConversation] = useState("");
     const [reportSummary, setReportSummary] = useState("");
+
+    // Key Discussion Points
+    const [keyPoints, setKeyPoints] = useState<string[]>([]);
+    const [newKeyPoint, setNewKeyPoint] = useState("");
+
+    // Steps Taken
+    const [stepsTaken, setStepsTaken] = useState<string[]>([]);
+    const [newStep, setNewStep] = useState("");
+
+    // Recommended Products
+    const [products, setProducts] = useState<ProductInput[]>([]);
+    const [prodName, setProdName] = useState("");
+    const [prodPrice, setProdPrice] = useState("");
+    const [prodImageFile, setProdImageFile] = useState<File | null>(null);
+    const [prodImagePreview, setProdImagePreview] = useState("");
+    const [prodUrl, setProdUrl] = useState("");
+    const prodFileInputRef = useRef<HTMLInputElement>(null);
+
     const [sending, setSending] = useState(false);
     const [fetchingTranscript, setFetchingTranscript] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,13 +66,10 @@ function CreateReportContent() {
                 const history = res.data?.data || res.data || [];
                 
                 if (Array.isArray(history) && history.length > 0) {
-                    // Extract unique numeric UIDs
                     const uniqueUids = Array.from(new Set(history.map((item: any) => Number(item.speakerUid)).filter((uid: number) => !isNaN(uid))));
                     
-                    // Determine the consultant's Agora UID
                     let actualConsultantUid = typeof user?.uid === 'number' ? user.uid : 2001;
                     if (uniqueUids.length > 0 && !uniqueUids.includes(actualConsultantUid)) {
-                        // Fallback: assume the higher UID is the consultant (e.g. 2001 vs 1001)
                         actualConsultantUid = Math.max(...uniqueUids);
                     }
 
@@ -67,14 +88,11 @@ function CreateReportContent() {
                     
                     if (formattedTranscript) {
                         setConversation(formattedTranscript);
-                        toast.success("Transcript fetched automatically!");
-                    } else {
-                        // Keep whatever user typed if transcript comes back empty
+                        toast.success("Transcript loaded automatically!");
                     }
                 }
             } catch (error) {
                 console.error("Failed to fetch transcript:", error);
-                // We don't show a toast error here to avoid annoying the user on random typing
             } finally {
                 setFetchingTranscript(false);
             }
@@ -102,18 +120,96 @@ function CreateReportContent() {
         }
     };
 
+    const removeLink = (index: number) => {
+        setLinks(links.filter((_, i) => i !== index));
+    };
+
+    const addKeyPoint = () => {
+        if (newKeyPoint && newKeyPoint.trim() !== "") {
+            setKeyPoints([...keyPoints, newKeyPoint.trim()]);
+            setNewKeyPoint("");
+        }
+    };
+
+    const removeKeyPoint = (index: number) => {
+        setKeyPoints(keyPoints.filter((_, i) => i !== index));
+    };
+
+    const addStep = () => {
+        if (newStep && newStep.trim() !== "") {
+            setStepsTaken([...stepsTaken, newStep.trim()]);
+            setNewStep("");
+        }
+    };
+
+    const removeStep = (index: number) => {
+        setStepsTaken(stepsTaken.filter((_, i) => i !== index));
+    };
+
+    const addProduct = () => {
+        if (!prodName.trim() || !prodPrice.trim()) {
+            toast.error("Please provide both Product Name and Price.");
+            return;
+        }
+        setProducts([
+            ...products,
+            {
+                name: prodName.trim(),
+                price: prodPrice.trim(),
+                image: prodImagePreview || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80",
+                url: prodUrl.trim() || "#"
+            }
+        ]);
+        setProdName("");
+        setProdPrice("");
+        setProdImageFile(null);
+        setProdImagePreview("");
+        setProdUrl("");
+    };
+
+    const removeProduct = (index: number) => {
+        setProducts(products.filter((_, i) => i !== index));
+    };
+
+    const removeImage = (index: number) => {
+        setImages(images.filter((_, i) => i !== index));
+    };
+
     const handleFinalize = async () => {
-        if (!consultationId) {
-            toast.error("Please enter a consultation ID.");
+        if (!reportSummary.trim()) {
+            toast.error("Please write a Report Summary.");
             return;
         }
 
         setSending(true);
         try {
             const formData = new FormData();
-            formData.append("consultationId", consultationId);
+            if (consultationId) {
+                formData.append("consultationId", consultationId);
+            }
             formData.append("conversation", conversation);
+            formData.append("summary", reportSummary);
             formData.append("reportSummary", reportSummary);
+            formData.append("notes", reportSummary);
+
+            keyPoints.forEach(point => {
+                formData.append("keyPoints", point);
+            });
+
+            stepsTaken.forEach(step => {
+                formData.append("stepsTaken", step);
+            });
+
+            if (products.length > 0) {
+                const formattedProducts = products.map(p => ({
+                    name: p.name,
+                    price: p.price,
+                    image: p.image,
+                    url: p.url,
+                    buyLink: p.url
+                }));
+                formData.append("recommendedProducts", JSON.stringify(formattedProducts));
+            }
             
             links.forEach(link => {
                 formData.append("links", link);
@@ -123,7 +219,6 @@ function CreateReportContent() {
                 formData.append("images", img.file);
             });
 
-            console.log("Sending report FormData:", formData);
             const response = await api.post("/report", formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -131,10 +226,14 @@ function CreateReportContent() {
             });
             
             if (response.data.success) {
-                toast.success("Consultation report finalized successfully!");
-                setTimeout(() => {
-                    router.push('/consultant/reports');
-                }, 2000);
+                toast.success("Consultation report created successfully!");
+                const createdReport = response.data.data;
+                const newReportId = createdReport?._id || createdReport?.id;
+
+                if (newReportId) {
+                    window.open(`/consultant/reports/${newReportId}`, '_blank');
+                }
+                router.push('/consultant/reports');
             }
         } catch (error: any) {
             console.error("Error finalizing report:", error);
@@ -144,195 +243,423 @@ function CreateReportContent() {
         }
     };
 
-    const removeImage = (index: number) => {
-        setImages(images.filter((_, i) => i !== index));
-    };
-
-    const removeLink = (index: number) => {
-        setLinks(links.filter((_, i) => i !== index));
-    };
-
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50/50 p-6 md:p-8 lg:p-10 space-y-8 animate-in fade-in duration-500">
+        <div className="flex flex-col min-h-screen bg-slate-50/50 p-6 md:p-10 space-y-8 animate-in fade-in duration-500 max-w-6xl mx-auto">
             {/* Header section */}
-            <div className="flex flex-col gap-4">
-                <Button 
-                    variant="ghost" 
-                    onClick={() => router.back()} 
-                    className="w-fit text-slate-500 hover:text-slate-900 -ml-2 rounded-xl"
-                >
-                    <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
-                </Button>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Consultation Report</h1>
-                    <p className="text-slate-500 mt-1">Submit your conversation summary and resources.</p>
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => router.back()} 
+                        className="w-fit text-slate-500 hover:text-slate-900 -ml-2 rounded-xl mb-2 font-bold"
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
+                    </Button>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <FileText className="w-5 h-5" />
+                        </div>
+                        Create Consultation Report
+                    </h1>
+                    <p className="text-slate-500 mt-1 text-sm">Submit your conversation summary, key points, steps taken, and recommendations.</p>
                 </div>
             </div>
 
-            {/* Main Content Card */}
-            <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white">
-                <CardContent className="p-0">
-                    {/* Consultation ID */}
-                    <div className="p-6 md:p-8">
-                        <div className="space-y-2 max-w-md">
-                            <Label htmlFor="consultationId" className="text-sm font-medium text-slate-700">Consultation ID</Label>
-                            <div className="relative">
-                                <Input 
-                                    id="consultationId"
-                                    className="h-12 rounded-xl bg-slate-50 border-slate-100 focus:ring-blue-500/20 pr-10"
-                                    value={consultationId}
-                                    onChange={(e) => setConsultationId(e.target.value)}
-                                    placeholder="e.g. 69ffc3623764570a2d6c35b9"
-                                />
-                                {fetchingTranscript && (
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                                        <Loader2 className="h-5 w-5 animate-spin" />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+            {/* ROW 1: Conversation Transcript & Report Summary IN THE SAME ROW */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Conversation Transcript (Left side of Row 1) */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm flex flex-col justify-between space-y-3">
+                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-blue-500" />
+                            Conversation Transcript
+                        </span>
+                        {fetchingTranscript && (
+                            <span className="text-[11px] font-semibold text-blue-600 flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Auto-fetching...
+                            </span>
+                        )}
+                    </Label>
+                    <Textarea 
+                        className="flex-1 min-h-[180px] text-xs border-slate-200 rounded-2xl p-4 focus-visible:ring-2 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-slate-50/50 font-mono text-slate-700 leading-relaxed"
+                        placeholder="Conversation log (automatically fetched or paste transcript here)..."
+                        value={conversation}
+                        onChange={(e) => setConversation(e.target.value)}
+                    />
+                </div>
+
+                {/* Report Summary (Right side of Row 1) */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm flex flex-col justify-between space-y-3">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-600" />
+                            Report Summary <span className="text-red-500">*</span>
+                        </Label>
+                        {consultationId && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                    const toastId = toast.loading("Fetching Gemini AI Summary...");
+                                    try {
+                                        const res = await api.get(`/report/ai-summary/${consultationId}`);
+                                        if (res.data?.success && res.data?.data) {
+                                            const aiData = res.data.data;
+                                            if (aiData.overview) setReportSummary(aiData.overview);
+                                            if (aiData.keyPoints && Array.isArray(aiData.keyPoints)) {
+                                                setKeyPoints((prev) => [...Array.from(new Set([...prev, ...aiData.keyPoints]))]);
+                                            }
+                                            if (aiData.actionItems && Array.isArray(aiData.actionItems)) {
+                                                setStepsTaken((prev) => [...Array.from(new Set([...prev, ...aiData.actionItems]))]);
+                                            }
+                                            toast.success("AI Summary, Key Points & Action items imported!", { id: toastId });
+                                        } else {
+                                            toast.error("No AI summary found yet.", { id: toastId });
+                                        }
+                                    } catch (err: any) {
+                                        toast.error(err?.response?.data?.message || "Failed to load AI summary.", { id: toastId });
+                                    }
+                                }}
+                                className="h-7 px-2.5 rounded-lg border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 font-bold text-[11px] flex items-center gap-1"
+                            >
+                                ✨ Import Gemini AI Summary
+                            </Button>
+                        )}
+                    </div>
+                    <Textarea 
+                        className="flex-1 min-h-[180px] text-sm border-slate-200 rounded-2xl p-4 focus-visible:ring-2 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-slate-50/50 font-medium leading-relaxed"
+                        placeholder="Write your detailed consultation report summary here..."
+                        value={reportSummary}
+                        onChange={(e) => setReportSummary(e.target.value)}
+                    />
+                </div>
+
+            </div>
+
+            {/* ROW 2: Key Discussion Points & Steps Taken (Side-by-Side 2-Column) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Key Discussion Points */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm space-y-4">
+                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                        <span>Key Discussion Points</span>
+                    </Label>
+                    
+                    <div className="flex gap-2">
+                        <Input 
+                            placeholder="e.g. Discussed boiler pressure leakage issue"
+                            value={newKeyPoint}
+                            onChange={(e) => setNewKeyPoint(e.target.value)}
+                            className="h-11 rounded-xl bg-slate-50 border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                            onKeyDown={(e) => e.key === 'Enter' && addKeyPoint()}
+                        />
+                        <Button 
+                            type="button"
+                            onClick={addKeyPoint} 
+                            className="h-11 rounded-xl px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shrink-0 shadow-sm"
+                        >
+                            <Plus className="h-4 w-4 mr-1" /> Add
+                        </Button>
                     </div>
 
-                    <Separator className="bg-slate-100" />
+                    {keyPoints.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                            {keyPoints.map((point, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 group transition-all hover:bg-indigo-50/80">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />
+                                        <p className="text-xs font-semibold text-slate-800 leading-snug">{point}</p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => removeKeyPoint(idx)}
+                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-2 shrink-0"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
-                    {/* Main Editor and Sidebar */}
-                    <div className="flex flex-col lg:flex-row min-h-[500px]">
-                        {/* Editor Section */}
-                         <div className="flex-1 p-6 md:p-8 space-y-6">
-                             <div className="space-y-3">
-                                 <Label className="text-lg font-bold text-slate-900 flex items-center justify-between">
-                                     <span>Conversation Transcript</span>
-                                     {fetchingTranscript && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
-                                 </Label>
-                                 <Textarea 
-                                    className="min-h-[200px] text-base border border-slate-200 rounded-2xl p-4 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-slate-50"
-                                    placeholder="user: Hello, sir!&#10;consultant: how can i help you.&#10;user: i feel headache.&#10;consultant: taka napa 2X time"
-                                    value={conversation}
-                                    onChange={(e) => setConversation(e.target.value)}
-                                />
-                             </div>
-                             
-                             <div className="space-y-3 flex-1 flex flex-col">
-                                <Label className="text-lg font-bold text-slate-900">
-                                    Report Summary <span className="text-red-500">*</span>
-                                </Label>
-                                <Textarea 
-                                    className="flex-1 min-h-[250px] text-base border-slate-200 rounded-xl p-5 focus-visible:ring-blue-500/20 resize-none placeholder:text-slate-400 bg-white shadow-sm"
-                                    placeholder="Write your detailed consultation report summary here..."
-                                    value={reportSummary}
-                                    onChange={(e) => setReportSummary(e.target.value)}
-                                />
-                             </div>
+                {/* Steps Taken */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm space-y-4">
+                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <ListOrdered className="w-4 h-4 text-blue-600" />
+                        <span>Steps Taken</span>
+                    </Label>
+                    
+                    <div className="flex gap-2">
+                        <Input 
+                            placeholder="e.g. Problem identified: hair strainer clogged"
+                            value={newStep}
+                            onChange={(e) => setNewStep(e.target.value)}
+                            className="h-11 rounded-xl bg-slate-50 border-slate-200 text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
+                            onKeyDown={(e) => e.key === 'Enter' && addStep()}
+                        />
+                        <Button 
+                            type="button"
+                            onClick={addStep} 
+                            className="h-11 rounded-xl px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 shadow-sm"
+                        >
+                            <Plus className="h-4 w-4 mr-1" /> Add
+                        </Button>
+                    </div>
+
+                    {stepsTaken.length > 0 && (
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                            {stepsTaken.map((step, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100 group transition-all hover:bg-blue-50/30">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                            {idx + 1}
+                                        </span>
+                                        <p className="text-xs font-semibold text-slate-800 leading-snug">{step}</p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => removeStep(idx)}
+                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-2 shrink-0"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+            </div>
+
+            {/* ROW 3: Recommended Products & Tools (With Full-Width Photo Attachment Box & Add Product Button Below) */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm space-y-4">
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                    <span>Recommended Products & Tools</span>
+                </Label>
+
+                <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Input 
+                            placeholder="Product Name (e.g. Pipe Wrench)"
+                            value={prodName}
+                            onChange={(e) => setProdName(e.target.value)}
+                            className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
+                        />
+                        <Input 
+                            placeholder="Price (e.g. €24.99)"
+                            value={prodPrice}
+                            onChange={(e) => setProdPrice(e.target.value)}
+                            className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
+                        />
+                        <Input 
+                            placeholder="Buy Link (optional, e.g. https://...)"
+                            value={prodUrl}
+                            onChange={(e) => setProdUrl(e.target.value)}
+                            className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
+                        />
+                    </div>
+
+                    {/* FULL-WIDTH PHOTO ATTACHMENT BOX */}
+                    <div 
+                        className="border-2 border-dashed border-emerald-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-emerald-50/40 hover:bg-emerald-50/70 transition-all cursor-pointer group w-full"
+                        onClick={() => prodFileInputRef.current?.click()}
+                    >
+                        <input 
+                            type="file" 
+                            ref={prodFileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    setProdImageFile(file);
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                        setProdImagePreview(reader.result as string);
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            }}
+                        />
+
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform shrink-0">
+                                <ImageIcon className="h-5 w-5" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-xs font-bold text-slate-800">
+                                    {prodImageFile ? `Attached Photo: ${prodImageFile.name}` : "Attach Product Photo (Click to upload)"}
+                                </p>
+                                <p className="text-[11px] text-slate-500 font-medium">Click to select photo for this product</p>
+                            </div>
                         </div>
 
-                        {/* Sidebar Section */}
-                        <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-50 p-6 md:p-8 space-y-8 bg-slate-50/30">
-                            
-                            {/* Links */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
-                                    <LinkIcon className="h-4 w-4 text-slate-500" />
-                                    <span>Helpful Links</span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="https://..." 
-                                        value={newLink}
-                                        onChange={(e) => setNewLink(e.target.value)}
-                                        className="h-10 rounded-xl bg-white border-slate-200 focus:ring-blue-500/20 text-sm"
-                                        onKeyDown={(e) => e.key === 'Enter' && addLink()}
-                                    />
-                                    <Button onClick={addLink} variant="secondary" className="h-10 rounded-xl px-3 bg-blue-50 text-blue-600 hover:bg-blue-100">
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <div className="space-y-2">
-                                    {links.map((link, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100 shadow-sm group hover:border-blue-200 transition-colors">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 shrink-0">
-                                                    <LinkIcon className="h-4 w-4" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-medium text-slate-700 truncate">{link}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => removeLink(idx)}
-                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                            >
-                                                <X className="h-3.5 w-3.5" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Images */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
-                                    <ImageIcon className="h-4 w-4 text-slate-500" />
-                                    <span>Images / Photos</span>
-                                </div>
-                                <div 
-                                    className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 bg-white hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                                    onClick={() => fileInputRef.current?.click()}
+                        {prodImagePreview && (
+                            <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-emerald-300 shrink-0">
+                                <img src={prodImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setProdImageFile(null);
+                                        setProdImagePreview("");
+                                    }}
+                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"
                                 >
-                                    <input 
-                                        type="file" 
-                                        ref={fileInputRef} 
-                                        className="hidden" 
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                    />
-                                    <div className="h-10 w-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
-                                        <ImageIcon className="h-5 w-5" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-sm font-medium text-slate-600">Attach Photo</p>
-                                        <p className="text-[11px] text-slate-400 mt-1">JPG, PNG (Max 5MB)</p>
-                                    </div>
-                                </div>
-                                
-                                {/* Dynamic Images List */}
-                                <div className="space-y-2">
-                                    {images.map((file, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100 shadow-sm group">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-orange-50 text-orange-500">
-                                                    <ImageIcon className="h-4 w-4" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-medium text-slate-700 truncate">{file.name}</p>
-                                                    <p className="text-[10px] text-slate-400">{file.size}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => removeImage(idx)}
-                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                            >
-                                                <X className="h-3.5 w-3.5" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                                    <X className="w-3 h-3" />
+                                </button>
                             </div>
-                        </div>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
 
-            {/* Bottom Actions Footer */}
-            <div className="flex justify-end items-center gap-4 pt-4 border-t border-slate-100">
+                    {/* ADD PRODUCT BUTTON (POSITIONED BELOW ATTACH PRODUCT PHOTO) */}
+                    <div className="flex justify-end pt-1">
+                        <Button 
+                            type="button"
+                            onClick={addProduct} 
+                            className="w-full sm:w-auto h-11 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md rounded-xl flex items-center justify-center gap-2"
+                        >
+                            <Plus className="h-4 w-4" /> Add Product
+                        </Button>
+                    </div>
+                </div>
+
+                {products.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                        {products.map((prod, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm group">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <img src={prod.image} alt={prod.name} className="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-slate-900 truncate">{prod.name}</p>
+                                        <p className="text-[11px] font-bold text-blue-600">{prod.price}</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => removeProduct(idx)}
+                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* ROW 4: Helpful Links & Attached Photos (2-Column) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Helpful Links Card */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm space-y-4">
+                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-blue-500" />
+                        <span>Helpful Links</span>
+                    </Label>
+                    <div className="flex gap-2">
+                        <Input 
+                            placeholder="https://..." 
+                            value={newLink}
+                            onChange={(e) => setNewLink(e.target.value)}
+                            className="h-10 rounded-xl bg-slate-50 border-slate-200 text-xs font-medium"
+                            onKeyDown={(e) => e.key === 'Enter' && addLink()}
+                        />
+                        <Button 
+                            type="button"
+                            onClick={addLink} 
+                            className="h-10 rounded-xl px-3 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs shrink-0"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    {links.length > 0 && (
+                        <div className="space-y-1.5">
+                            {links.map((link, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 border border-slate-100">
+                                    <p className="text-xs font-medium text-slate-700 truncate max-w-[240px]">{link}</p>
+                                    <button 
+                                        type="button"
+                                        onClick={() => removeLink(idx)}
+                                        className="text-slate-400 hover:text-red-500 p-1 rounded-md"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Attach Photos Card */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm space-y-4">
+                    <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-orange-500" />
+                        <span>Attached Photos</span>
+                    </Label>
+                    <div 
+                        className="border-2 border-dashed border-slate-200 rounded-2xl p-4 flex items-center justify-center gap-3 bg-slate-50/50 hover:bg-blue-50/30 hover:border-blue-300 transition-all cursor-pointer group"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                        />
+                        <div className="h-8 w-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+                            <ImageIcon className="h-4 w-4" />
+                        </div>
+                        <p className="text-xs font-semibold text-slate-700">Click to Attach Photo</p>
+                    </div>
+
+                    {images.length > 0 && (
+                        <div className="space-y-1.5">
+                            {images.map((file, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 border border-slate-100">
+                                    <p className="text-xs font-medium text-slate-700 truncate max-w-[220px]">{file.name}</p>
+                                    <button 
+                                        type="button"
+                                        onClick={() => removeImage(idx)}
+                                        className="text-slate-400 hover:text-red-500 p-1 rounded-md"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+            </div>
+
+            {/* 🚀 SUBMIT REPORT BUTTON (AT THE VERY BOTTOM OF ALL FORMS) */}
+            <div className="pt-6 pb-10 flex justify-end">
                 <Button 
                     onClick={handleFinalize}
                     disabled={sending}
-                    className="h-12 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200 transition-all font-semibold border-none disabled:opacity-50"
+                    className="w-full sm:w-auto h-14 px-10 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl shadow-blue-500/25 font-black text-base border-none disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-3"
                 >
-                    <Send className="mr-2 h-4 w-4" />
-                    {sending ? "Sending..." : "Submit Report"}
+                    {sending ? (
+                        <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            Submitting Report...
+                        </>
+                    ) : (
+                        <>
+                            <Send className="h-5 w-5" />
+                            Submit Final Report
+                        </>
+                    )}
                 </Button>
             </div>
+
         </div>
     );
 }

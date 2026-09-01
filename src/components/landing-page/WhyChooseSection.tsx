@@ -3,6 +3,7 @@
 import React from 'react';
 import { ShieldCheck, Lock, Users, Zap, MessageSquare } from 'lucide-react';
 import { useLandingLanguage } from '@/context/LandingLanguageContext';
+import ScrollReveal from '@/components/landing-page/ScrollReveal';
 
 export default function WhyChooseSection() {
   const { t } = useLandingLanguage();
@@ -12,7 +13,7 @@ export default function WhyChooseSection() {
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-12 lg:gap-16">
         
         {/* Left Content */}
-        <div className="space-y-6 lg:w-[45%] flex flex-col items-start">
+        <ScrollReveal variant="fade-right" duration={750} className="space-y-6 lg:w-[45%] flex flex-col items-start">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold tracking-wider uppercase">
             <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-blue-600" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/></svg>
             {t('why.badge')}
@@ -50,13 +51,13 @@ export default function WhyChooseSection() {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Right 2x2 Feature Grid */}
         <div className="lg:w-[55%] w-full relative">
           
           {/* Center Dot Grid Matrix */}
-          <div className="absolute -top-6 -left-10 z-0 hidden sm:grid grid-cols-5 gap-2.5 opacity-40">
+          <div className="absolute -top-6 -left-10 z-0 hidden sm:grid grid-cols-5 gap-2.5 opacity-40 animate-pulse-slow">
             {Array.from({ length: 20 }).map((_, i) => (
               <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-300" />
             ))}
@@ -65,52 +66,60 @@ export default function WhyChooseSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 relative z-10">
             
             {/* Card 1: Top-Rated Experts */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-xl hover:border-blue-200 transition-all duration-300 relative overflow-hidden flex flex-col items-start">
-              <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none"><path d="M0,15 C30,-5 70,25 100,5 L100,25 L0,25 Z" fill="#EEF5FF"/></svg>
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 shrink-0 relative z-10">
-                <Users className="w-6 h-6" />
+            <ScrollReveal variant="scale-up" delay={100}>
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-2xl hover:border-blue-300 hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden flex flex-col items-start group h-full">
+                <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"><path d="M0,15 C30,-5 70,25 100,5 L100,25 L0,25 Z" fill="#EEF5FF"/></svg>
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 shrink-0 relative z-10 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_1_title')}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed relative z-10">
+                  {t('why.card_1_desc')}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_1_title')}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed relative z-10">
-                {t('why.card_1_desc')}
-              </p>
-            </div>
+            </ScrollReveal>
 
             {/* Card 2: Quick & Easy Process */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-xl hover:border-purple-200 transition-all duration-300 relative overflow-hidden flex flex-col items-start">
-              <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none"><path d="M0,5 C40,25 60,-5 100,15 L100,25 L0,25 Z" fill="#F5F3FF"/></svg>
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 shrink-0 relative z-10">
-                <Zap className="w-6 h-6" />
+            <ScrollReveal variant="scale-up" delay={200}>
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-2xl hover:border-purple-300 hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden flex flex-col items-start group h-full">
+                <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"><path d="M0,5 C40,25 60,-5 100,15 L100,25 L0,25 Z" fill="#F5F3FF"/></svg>
+                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 shrink-0 relative z-10 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_2_title')}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed relative z-10">
+                  {t('why.card_2_desc')}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_2_title')}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed relative z-10">
-                {t('why.card_2_desc')}
-              </p>
-            </div>
+            </ScrollReveal>
 
             {/* Card 3: Personalized Guidance */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-xl hover:border-amber-200 transition-all duration-300 relative overflow-hidden flex flex-col items-start">
-              <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none"><path d="M0,20 C30,-5 70,-5 100,20 L100,25 L0,25 Z" fill="#FFFBEB"/></svg>
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mb-4 shrink-0 relative z-10">
-                <MessageSquare className="w-6 h-6" />
+            <ScrollReveal variant="scale-up" delay={300}>
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-2xl hover:border-amber-300 hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden flex flex-col items-start group h-full">
+                <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"><path d="M0,20 C30,-5 70,-5 100,20 L100,25 L0,25 Z" fill="#FFFBEB"/></svg>
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mb-4 shrink-0 relative z-10 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_3_title')}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed relative z-10">
+                  {t('why.card_3_desc')}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_3_title')}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed relative z-10">
-                {t('why.card_3_desc')}
-              </p>
-            </div>
+            </ScrollReveal>
 
             {/* Card 4: Safe & Secure */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-xl hover:border-emerald-200 transition-all duration-300 relative overflow-hidden flex flex-col items-start">
-              <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none"><path d="M0,10 C40,30 60,-5 100,10 L100,25 L0,25 Z" fill="#ECFDF5"/></svg>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4 shrink-0 relative z-10">
-                <ShieldCheck className="w-6 h-6" />
+            <ScrollReveal variant="scale-up" delay={400}>
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md hover:shadow-2xl hover:border-emerald-300 hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden flex flex-col items-start group h-full">
+                <svg viewBox="0 0 100 25" preserveAspectRatio="none" className="absolute bottom-0 left-0 w-full h-16 pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"><path d="M0,10 C40,30 60,-5 100,10 L100,25 L0,25 Z" fill="#ECFDF5"/></svg>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4 shrink-0 relative z-10 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_4_title')}</h3>
+                <p className="text-sm text-slate-600 leading-relaxed relative z-10">
+                  {t('why.card_4_desc')}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1.5 relative z-10">{t('why.card_4_title')}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed relative z-10">
-                {t('why.card_4_desc')}
-              </p>
-            </div>
+            </ScrollReveal>
 
           </div>
         </div>

@@ -3,13 +3,14 @@
 import React from 'react';
 import { Download, CalendarDays, Video, MessageSquare, FileText, Star, Search, Scale, Briefcase, Users, LineChart, ShieldCheck, QrCode } from 'lucide-react';
 import { useLandingLanguage } from '@/context/LandingLanguageContext';
+import ScrollReveal from '@/components/landing-page/ScrollReveal';
 
 export default function MobileAppSection() {
   const { t } = useLandingLanguage();
 
   return (
     <section id="mobile-app" className="container mx-auto px-6 sm:px-8 lg:px-12 py-12 lg:py-16 relative z-10 scroll-mt-20">
-      <div className="bg-gradient-to-b from-[#F4F8FE] via-[#FAFCFF] to-[#EFF6FF] border border-blue-100/80 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.07)] rounded-[3rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden">
+      <ScrollReveal variant="zoom-in" duration={800} className="bg-gradient-to-b from-[#F4F8FE] via-[#FAFCFF] to-[#EFF6FF] border border-blue-100/80 shadow-[0_20px_50px_-15px_rgba(37,99,235,0.07)] rounded-[3rem] p-8 sm:p-12 lg:p-16 relative overflow-hidden">
         
         {/* Soft Background Ambient Lights */}
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-400/10 rounded-full blur-[100px] pointer-events-none" />
@@ -18,7 +19,7 @@ export default function MobileAppSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center mb-16 relative z-10">
           
           {/* Left Column: Content */}
-          <div className="lg:col-span-6 flex flex-col items-start text-left">
+          <ScrollReveal variant="fade-right" delay={150} className="lg:col-span-6 flex flex-col items-start text-left">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold tracking-wider uppercase mb-6 shadow-sm">
               <Download className="w-3.5 h-3.5" />
               {t('mobile.badge')}
@@ -114,10 +115,10 @@ export default function MobileAppSection() {
               </a>
             </div>
 
-          </div>
+          </ScrollReveal>
 
           {/* Right Column: 3D Pedestal & Phone Illustration from CTA Section */}
-          <div className="lg:col-span-6 relative flex items-center justify-center min-h-[460px] lg:min-h-[520px] mt-8 lg:mt-0">
+          <ScrollReveal variant="fade-left" delay={250} className="lg:col-span-6 relative flex items-center justify-center min-h-[460px] lg:min-h-[520px] mt-8 lg:mt-0">
             <div className="relative w-full max-w-[500px] aspect-square flex items-center justify-center translate-y-9">
               {/* Base 3D Render (Pedestal, plant, speech bubble, stars) */}
               <img 
@@ -127,15 +128,15 @@ export default function MobileAppSection() {
               />
 
               {/* Phone Image overlay (Shifted 5-8px to the right to sit perfectly centered over the pedestal) */}
-              <div className="absolute z-20 top-1/2 left-1/2 -translate-x-[48%] -translate-y-[68%] w-[60%] max-w-[300px] drop-shadow-[0_25px_60px_rgba(15,23,42,0.2)] hover:scale-[1.02] transition-transform duration-500">
+              <div className="absolute z-20 top-1/2 left-1/2 -translate-x-[48%] -translate-y-[68%] w-[60%] max-w-[300px] drop-shadow-[0_25px_60px_rgba(15,23,42,0.2)] animate-float">
                 <img 
                   src="/cta-mobile-illustration.png" 
                   alt="Fixpair Mobile App Screen" 
-                  className="w-full h-auto object-contain" 
+                  className="w-full h-auto object-contain hover:scale-105 transition-transform duration-500" 
                 />
               </div>
             </div>
-          </div>
+          </ScrollReveal>
 
         </div>
 
@@ -202,14 +203,14 @@ export default function MobileAppSection() {
                 Scan with phone camera<br />to get the app instantly!
               </p>
             </div>
-            <div className="w-16 h-16 bg-white rounded-2xl shadow-md p-2 flex items-center justify-center shrink-0 border border-slate-200">
+            <div className="w-16 h-16 bg-white rounded-2xl shadow-md p-2 flex items-center justify-center shrink-0 border border-slate-200 hover:scale-110 transition-transform duration-300">
               <QrCode className="w-full h-full text-slate-900" strokeWidth={1.5} />
             </div>
           </div>
 
         </div>
 
-      </div>
+      </ScrollReveal>
     </section>
   );
 }

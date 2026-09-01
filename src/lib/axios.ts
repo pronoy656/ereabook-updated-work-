@@ -11,9 +11,20 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = Cookies.get('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token && token !== 'undefined' && token !== 'null' && token.trim() !== '') {
+      config.headers.Authorization = `Bearer ${token.trim()}`;
+    } else {
+      delete config.headers.Authorization;
     }
+
+    if (config.data instanceof FormData) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+      } else {
+        delete config.headers['Content-Type'];
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

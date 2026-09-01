@@ -155,6 +155,7 @@ const EXPERTS_DE = [
 ];
 
 import { useLandingLanguage } from '@/context/LandingLanguageContext';
+import ScrollReveal from '@/components/landing-page/ScrollReveal';
 
 export default function TopExpertsSection() {
   const [expertIdx, setExpertIdx] = useState(0);
@@ -169,7 +170,7 @@ export default function TopExpertsSection() {
     <section id="experts" className="container mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-24 relative z-10 scroll-mt-20">
       
       {/* Section Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <ScrollReveal variant="fade-up" duration={750} className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div className="flex flex-col items-start">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 text-blue-600 text-xss font-bold tracking-wider uppercase mb-4 border border-slate-200 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
@@ -183,11 +184,11 @@ export default function TopExpertsSection() {
           </p>
         </div>
 
-        <Link href="#" className="inline-flex items-center gap-2 bg-white border border-blue-600/40 hover:border-blue-600 hover:bg-blue-50/50 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shrink-0">
+        <Link href="#" className="inline-flex items-center gap-2 bg-white border border-blue-600/40 hover:border-blue-600 hover:bg-blue-50/50 hover:scale-105 active:scale-95 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm shrink-0">
           {t('experts.view_all')}
           <ArrowRight className="w-4 h-4" />
         </Link>
-      </div>
+      </ScrollReveal>
 
       {/* Carousel Container with Left/Right Arrow Buttons */}
       <div className="relative">
@@ -217,30 +218,30 @@ export default function TopExpertsSection() {
             {expertsList.map((expert) => (
               <div 
                 key={expert.id} 
-                className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 bg-white rounded-3xl border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.04)] hover:shadow-[0_15px_35px_rgba(37,99,235,0.08)] hover:border-blue-200 transition-all duration-300 p-6 flex flex-col justify-between group"
+                className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 bg-white rounded-3xl border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.04)] hover:shadow-2xl hover:border-blue-300 hover:-translate-y-2 transition-all duration-300 p-6 flex flex-col justify-between group"
               >
                 <div>
                   {/* Header row: Pill & Verified Icon */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`${expert.categoryBg} text-xss font-bold px-2.5 py-1 rounded-md`}>
+                    <span className={`${expert.categoryBg} text-xss font-bold px-2.5 py-1 rounded-md group-hover:scale-105 transition-transform`}>
                       {expert.category}
                     </span>
-                    <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                   </div>
 
                   {/* Avatar & Name */}
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100 shadow-sm">
                       <img 
                         src={expert.image} 
                         alt={expert.name} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                     </div>
                     <div className="flex flex-col">
-                      <h3 className="text-[17px] font-bold text-slate-900 leading-tight mb-1">{expert.name}</h3>
+                      <h3 className="text-[17px] font-bold text-slate-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">{expert.name}</h3>
                       <span className="text-[12px] text-slate-600 font-medium">{expert.role}</span>
                     </div>
                   </div>

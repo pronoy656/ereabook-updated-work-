@@ -67,7 +67,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendingOtp, setResendingOtp] = useState(false);
   const [otp, setOtp] = useState("");
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     name: "",
     email: "",
     password: "",
@@ -80,10 +80,15 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
     bio: "",
     consultancyType: "",
     perMinuteRate: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
   
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [addSelectedFile, setAddSelectedFile] = useState<File | null>(null);
+  const addFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
+  const editFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [consultancyTypes, setConsultancyTypes] = useState<any[]>([]);
 
@@ -167,17 +172,17 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
 
       const formDataObj = new FormData();
       formDataObj.append('data', JSON.stringify(payload));
-      if (selectedFile) {
-        formDataObj.append('image', selectedFile);
+      if (addSelectedFile) {
+        formDataObj.append('image', addSelectedFile);
       }
 
-      const response = await api.post("/user", formDataObj, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await api.post("/user", formDataObj);
 
       if (response.data.success) {
         toast.success("Consultant created");
         setIsAddOpen(false);
+        setAddSelectedFile(null);
+        setFormData(initialFormData);
         fetchUsers();
       }
     } catch (error: any) {
@@ -211,17 +216,16 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
 
       const formDataObj = new FormData();
       formDataObj.append('data', JSON.stringify(payload));
-      if (selectedFile) {
-        formDataObj.append('image', selectedFile);
+      if (editSelectedFile) {
+        formDataObj.append('image', editSelectedFile);
       }
 
-      const response = await api.patch(`/user/${selectedUser._id}`, formDataObj, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await api.patch(`/user/${selectedUser._id}`, formDataObj);
 
       if (response.data.success) {
         toast.success("User updated successfully");
         setIsEditOpen(false);
+        setEditSelectedFile(null);
         fetchUsers();
       }
     } catch (error: any) {
@@ -357,7 +361,13 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
 
           {/* Add Consultant Dialog */}
           {role === "CONSULTANT" && (
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <Dialog open={isAddOpen} onOpenChange={(open) => {
+          setIsAddOpen(open);
+          if (!open) {
+            setAddSelectedFile(null);
+            setFormData(initialFormData);
+          }
+        }}>
           <DialogTrigger asChild>
             <button className="bg-[#FE6D2C] hover:bg-[#E85D20] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-[#FE6D2C]/20 transition-transform active:scale-95">
               {t("add_consultant")}
@@ -374,16 +384,16 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                 <div className="flex items-center gap-4">
                    <div 
                      className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 overflow-hidden cursor-pointer"
-                     onClick={() => fileInputRef.current?.click()}
+                     onClick={() => addFileInputRef.current?.click()}
                    >
-                     {selectedFile ? (
-                       <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="w-full h-full object-cover" />
+                     {addSelectedFile ? (
+                       <img src={URL.createObjectURL(addSelectedFile)} alt="Preview" className="w-full h-full object-cover" />
                      ) : (
                        <Plus className="w-6 h-6" />
                      )}
                    </div>
-                   <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>{t("upload_image")}</button>
-                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                   <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => addFileInputRef.current?.click()}>{t("upload_image")}</button>
+                   <input type="file" ref={addFileInputRef} className="hidden" accept="image/*" onChange={(e) => setAddSelectedFile(e.target.files?.[0] || null)} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -635,9 +645,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        {user.image ? (
+                        {user.image || (user as any).avatar || (user as any).profilePic || (user as any).profileImage ? (
                           <img
-                            src={getImageUrl(user.image) || user.image}
+                            src={getImageUrl(user.image || (user as any).avatar || (user as any).profilePic || (user as any).profileImage)}
                             alt={user.name}
                             className="h-9 w-9 rounded-full object-cover border border-slate-100 dark:border-slate-700"
                           />
@@ -688,7 +698,7 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                               consultancyType: (user as any).consultancyType?._id || (user as any).consultancyType || "",
                               perMinuteRate: (user as any).perMinuteRate?.toString() || "",
                             });
-                            setSelectedFile(null);
+                            setEditSelectedFile(null);
                             setIsEditOpen(true);
                           }}
                           className="p-1 hover:bg-emerald-50 rounded-md hover:text-emerald-500 transition-colors"
@@ -789,18 +799,18 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
               <div className="flex items-center gap-4">
                  <div 
                    className="w-16 h-16 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 overflow-hidden cursor-pointer"
-                   onClick={() => fileInputRef.current?.click()}
+                   onClick={() => editFileInputRef.current?.click()}
                  >
-                   {selectedFile ? (
-                     <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="w-full h-full object-cover" />
-                   ) : selectedUser?.image ? (
-                     <img src={getImageUrl(selectedUser.image) || selectedUser.image} alt="Profile" className="w-full h-full object-cover" />
+                   {editSelectedFile ? (
+                     <img src={URL.createObjectURL(editSelectedFile)} alt="Preview" className="w-full h-full object-cover" />
+                   ) : (selectedUser?.image || (selectedUser as any)?.avatar) ? (
+                     <img src={getImageUrl(selectedUser?.image || (selectedUser as any)?.avatar)} alt="Profile" className="w-full h-full object-cover" />
                    ) : (
                      <Plus className="w-6 h-6" />
                    )}
                  </div>
-                 <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => fileInputRef.current?.click()}>{t("change_image")}</button>
-                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                 <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700" onClick={() => editFileInputRef.current?.click()}>{t("change_image")}</button>
+                 <input type="file" ref={editFileInputRef} className="hidden" accept="image/*" onChange={(e) => setEditSelectedFile(e.target.files?.[0] || null)} />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -963,9 +973,9 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
           {selectedUser && (
             <div className="space-y-4 py-4">
               <div className="flex items-center gap-4">
-                {selectedUser.image ? (
+                {(selectedUser.image || (selectedUser as any).avatar || (selectedUser as any).profilePic || (selectedUser as any).profileImage) ? (
                   <img
-                    src={getImageUrl(selectedUser.image) || selectedUser.image}
+                    src={getImageUrl(selectedUser.image || (selectedUser as any).avatar || (selectedUser as any).profilePic || (selectedUser as any).profileImage)}
                     alt={selectedUser.name}
                     className="h-16 w-16 rounded-full object-cover border border-slate-100"
                   />
