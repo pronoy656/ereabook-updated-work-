@@ -5,12 +5,13 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import api from '@/lib/axios';
+import { initWebPush } from '@/lib/firebase';
 
 interface AuthContextType {
   user: any | null;
   loading: boolean;
   login: (token: string, userData?: any) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           initialUser = { token };
         }
         setUser(initialUser);
+
+        // Register Web Push FCM token with backend
+        initWebPush(token).catch(() => {});
 
         try {
           const response = await api.get('/user/profile');
@@ -59,6 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({ ...userData, token });
     }
 
+    // Register Web Push FCM token with backend
+    initWebPush(token).catch(() => {});
+
     // Dynamic redirection based on role
     const normalizedRole = role.toUpperCase();
     if (normalizedRole === 'SUPER_ADMIN' || normalizedRole === 'ADMIN') {
@@ -71,10 +78,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    Cookies.remove('accessToken');
-    setUser(null);
-    router.push('/login');
+  const logout = async () => {
+    try {
+      let role = (user?.role || user?.userType || '').toUpperCase();
+      if (!role) {
+        const token = Cookies.get('accessToken');
+        if (token) {
+          try {
+            const decoded: any = jwtDecode(token);
+            role = (decoded?.role || decoded?.userType || '').toUpperCase();
+          } catch {}
+        }
+      }
+
+      if (role === 'CONSULTANT') {
+        await api.patch('/user/toggle-status', {
+          activeStatus: false,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to update status to unavailable on logout:", err);
+    } finally {
+      Cookies.remove('accessToken');
+      setUser(null);
+      router.push('/login');
+    }
   };
 
   return (

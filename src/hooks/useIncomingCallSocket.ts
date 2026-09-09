@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { toast } from "sonner";
+import { audioManager } from "@/lib/audioManager";
+import {
+  requestDesktopNotificationPermission,
+  showDesktopNotification,
+} from "@/lib/notifications";
+import { initWebPush } from "@/lib/firebase";
 
 export interface IncomingCallPayload {
   sessionId: string;
@@ -13,7 +19,11 @@ export interface IncomingCallPayload {
   token: string;
   uid: number;
   callerName?: string;
+  callerImage?: string;
+  callerAvatar?: string;
   consultationId?: string;
+  bookingType?: string;
+  type?: string;
 }
 
 function getSocketUrl(): string {
@@ -34,6 +44,15 @@ export function useIncomingCallSocket() {
   const router = useRouter();
 
   useEffect(() => {
+    // Request notification permission and init Web Push FCM once mounted
+    requestDesktopNotificationPermission()
+      .then((granted) => {
+        if (granted) {
+          initWebPush().catch(() => {});
+        }
+      })
+      .catch(() => {});
+
     const token = Cookies.get("accessToken");
     if (!token) {
       console.warn("🔌 No auth token – skipping incoming call socket connection");
@@ -43,22 +62,37 @@ export function useIncomingCallSocket() {
     const socketUrl = getSocketUrl();
     const socket: Socket = io(socketUrl, {
       transports: ["websocket", "polling"],
-      auth: { token },
-      // Optional: add path if backend uses specific socket path
+      auth: { token: `Bearer ${token}` },
     });
 
     socket.on("connect", () => {
-      console.log("🔌 Consultant Socket connected for incoming calls");
+      console.log("🔌 Consultant Socket connected for incoming calls & notifications");
     });
 
+    // 1. Incoming Call Event
     socket.on("incoming-call", (payload: IncomingCallPayload) => {
       console.log("📞 Incoming call received!", payload);
       setIncomingCall(payload);
+
+      // Play looping ringtone
+      audioManager.playRingtone();
+
+      // Show OS Desktop Notification banner on screen corner
+      const caller = payload.callerName || "A client";
+      showDesktopNotification(`📞 Incoming Call: ${caller}`, {
+        body: "Click to answer the consultation call",
+        icon: payload.callerAvatar || payload.callerImage || "/favicon.png",
+        requireInteraction: true,
+        tag: payload.sessionId || "incoming-call",
+        url: `/consultant/overview`,
+      }).catch(console.error);
     });
 
+    // 2. Call Cancelled / Ended / Rejected Handlers
     const handleCallCancelled = (data: any) => {
       console.log("🚫 Call cancelled or ended event received:", data);
-      toast.info("Call was cancelled by the caller");
+      audioManager.stopRingtone();
+      toast.info("Call was cancelled or ended by the caller");
       setIncomingCall(null);
     };
 
@@ -72,14 +106,57 @@ export function useIncomingCallSocket() {
     socket.on("session_ended", handleCallCancelled);
     socket.on("consultation-cancelled", handleCallCancelled);
 
+    // 3. General In-App Notifications (Callbacks, Scheduled Bookings, System updates)
+    socket.on("notification", (data: any) => {
+      console.log("🔔 Real-time notification received:", data);
+
+      // Play pleasant notification chime
+      audioManager.playNotificationChime();
+
+      const notifTitle = data?.title || "New Notification";
+      const notifMsg = data?.message || "You have a new update";
+
+      // Show OS Desktop Notification banner on screen corner
+      showDesktopNotification(notifTitle, {
+        body: notifMsg,
+        icon: "/favicon.png",
+        tag: data?._id || data?.relatedBooking || `notif-${Date.now()}`,
+        url: "/consultant/requests",
+        requireInteraction: false,
+      }).catch(console.error);
+
+      // Show in-app toast
+      toast.info(notifTitle, {
+        description: notifMsg,
+        duration: 6000,
+        action: data?.relatedBooking
+          ? {
+              label: "View Request",
+              onClick: () => router.push("/consultant/requests"),
+            }
+          : undefined,
+      });
+
+      // Dispatch event for UI (e.g., NotificationDropdown) to update unread badge in real time
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("fixpair:new-notification", { detail: data })
+        );
+      }
+    });
+
+    // 4. AI Summary Ready Event
     socket.on("ai-summary-ready", (data: any) => {
       console.log("✨ AI Summary Ready event received:", data);
+      audioManager.playNotificationChime();
       toast.success("✨ Gemini AI Consultation Summary is ready!", {
         description: "AI action items and consultation breakdown have been generated.",
-        action: data?.consultationId ? {
-          label: "View Report",
-          onClick: () => router.push(`/consultant/reports`),
-        } : undefined,
+        action: data?.consultationId
+          ? {
+              label: "View Report",
+              onClick: () => router.push(`/consultant/reports`),
+            }
+          : undefined,
         duration: 8000,
       });
     });
@@ -89,13 +166,15 @@ export function useIncomingCallSocket() {
     });
 
     return () => {
+      audioManager.stopRingtone();
       socket.removeAllListeners();
       socket.disconnect();
     };
-  }, []);
+  }, [router]);
 
-  const acceptCall = async () => {
+  const acceptCall = useCallback(async () => {
     if (incomingCall) {
+      audioManager.stopRingtone();
       const toastId = toast.loading("Joining call...");
       try {
         const consId = incomingCall.consultationId || incomingCall.sessionId;
@@ -110,7 +189,9 @@ export function useIncomingCallSocket() {
         let joinData: any = null;
         if (incomingCall.sessionId) {
           try {
-            const joinResponse = await api.post("/video-session/join", { sessionId: incomingCall.sessionId });
+            const joinResponse = await api.post("/video-session/join", {
+              sessionId: incomingCall.sessionId,
+            });
             joinData = joinResponse.data?.data;
           } catch (joinErr) {
             console.warn("Notice: video-session/join warning, page will attempt fallback session check:", joinErr);
@@ -140,7 +221,8 @@ export function useIncomingCallSocket() {
           queryParams.append("uid", uid.toString());
         }
 
-        const sessId = joinData?.sessionId || joinData?.id || joinData?._id || incomingCall.sessionId;
+        const sessId =
+          joinData?.sessionId || joinData?.id || joinData?._id || incomingCall.sessionId;
         if (sessId) {
           queryParams.append("sessionId", sessId);
         }
@@ -156,26 +238,34 @@ export function useIncomingCallSocket() {
         setIncomingCall(null);
       }
     }
-  };
+  }, [incomingCall, router]);
 
-  const declineCall = async () => {
+  const declineCall = useCallback(async () => {
     if (incomingCall) {
+      audioManager.stopRingtone();
       try {
         const consId = incomingCall.consultationId || incomingCall.sessionId;
         if (consId) {
-          await api.patch(`/consultation/status/${consId}`, { status: "rejected" }).catch(() => null);
+          await api
+            .patch(`/consultation/status/${consId}`, { status: "rejected" })
+            .catch(() => null);
         }
         if (incomingCall.sessionId) {
-          await api.post("/video-session/action", { sessionId: incomingCall.sessionId, action: "REJECT" }).catch(() => null);
+          await api
+            .post("/video-session/action", {
+              sessionId: incomingCall.sessionId,
+              action: "REJECT",
+            })
+            .catch(() => null);
         }
         toast.info("Call declined");
       } catch (error) {
         console.error("Error on decline API:", error);
       }
-      
+
       setIncomingCall(null);
     }
-  };
+  }, [incomingCall]);
 
   return { incomingCall, acceptCall, declineCall };
 }

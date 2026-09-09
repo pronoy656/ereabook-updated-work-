@@ -148,6 +148,13 @@ export default function ReportDetailsPage() {
                 >
                     <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
                 </Button>
+                
+                <Button 
+                    onClick={() => router.push(`/consultant/reports/create?editId=${report._id}`)} 
+                    className="w-fit bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold px-6"
+                >
+                    Edit Report
+                </Button>
             </div>
 
             {/* ── ON-SCREEN REPORT VIEW ───────────────────────────────── */}

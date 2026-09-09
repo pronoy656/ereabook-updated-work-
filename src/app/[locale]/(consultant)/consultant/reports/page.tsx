@@ -274,6 +274,17 @@ function ReportsContent() {
                                                     >
                                                         <Eye className="h-4 w-4 mr-1.5" /> View
                                                     </Button>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm"
+                                                        className="rounded-xl text-blue-600 border-blue-200 hover:bg-blue-50 font-semibold ml-2"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.push(`/consultant/reports/create?editId=${report._id}`);
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </Button>
                                                 </div>
                                             </TableCell>
                                         </TableRow>

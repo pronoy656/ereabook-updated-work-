@@ -36,6 +36,8 @@ import { getImageUrl } from "@/lib/utils";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { useTranslations } from "next-intl";
+import { audioManager } from "@/lib/audioManager";
+import { showDesktopNotification, requestDesktopNotificationPermission } from "@/lib/notifications";
 
 const getInitials = (name?: string) => {
   if (!name) return 'C';
@@ -185,6 +187,23 @@ export default function TopBar() {
               <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all">
                 <Settings className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
                 <span className="font-medium">{t("settings")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={async () => {
+                  audioManager.unlockAudio();
+                  audioManager.playNotificationChime();
+                  await requestDesktopNotificationPermission();
+                  showDesktopNotification("🔔 Fixpair Test Alert", {
+                    body: "Desktop notifications and audio alerts are working perfectly!",
+                    icon: "/favicon.png",
+                    requireInteraction: false,
+                  });
+                  toast.success("Test notification and chime sound triggered!");
+                }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all"
+              >
+                <Bell className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
+                <span className="font-medium">Test Sound & Notification</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all">
                 <HelpCircle className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />

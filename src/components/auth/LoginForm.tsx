@@ -17,6 +17,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
@@ -25,7 +26,7 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await api.post("/auth/login", { email, password });
+      const response = await api.post("/auth/login", { email, password, rememberMe });
       
       // Based on server response: { success: true, data: { accessToken: "...", refreshToken: "..." } }
       const token = response.data?.data?.accessToken || response.data?.accessToken || response.data?.token || response.data?.data?.token;
@@ -106,9 +107,9 @@ export default function LoginForm() {
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 rounded border border-slate-200 bg-slate-50 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors">
-              {/* Custom Checkbox */}
+          <div className="flex items-center space-x-2" onClick={() => setRememberMe(!rememberMe)}>
+            <div className={`h-4 w-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${rememberMe ? 'bg-blue-600 border-blue-600' : 'border-slate-200 bg-slate-50 hover:border-blue-500'}`}>
+              {rememberMe && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
             </div>
             <span className="text-sm text-slate-500">{t("remember_password")}</span>
           </div>

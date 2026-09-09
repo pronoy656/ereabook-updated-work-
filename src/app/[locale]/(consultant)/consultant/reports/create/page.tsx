@@ -25,8 +25,13 @@ function CreateReportContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialConsultationId = searchParams.get('consultationId') || "";
+    const editId = searchParams.get('editId') || "";
+
+    const [isEditing, setIsEditing] = useState(!!editId);
+    const [loadingData, setLoadingData] = useState(!!editId);
 
     const [images, setImages] = useState<{ name: string; size: string; file: File }[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
     const [links, setLinks] = useState<string[]>([]);
     const [newLink, setNewLink] = useState("");
     const [consultationId, setConsultationId] = useState(initialConsultationId);
@@ -55,8 +60,39 @@ function CreateReportContent() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { user } = useAuth();
     
+    // Fetch existing report for editing
+    useEffect(() => {
+        if (editId) {
+            setLoadingData(true);
+            api.get(`/report/${editId}`)
+                .then(res => {
+                    if (res.data?.success) {
+                        const data = res.data.data;
+                        if (data.consultation?._id) setConsultationId(data.consultation._id);
+                        setConversation(data.conversation || "");
+                        setReportSummary(data.reportSummary || data.summary || data.notes || "");
+                        setKeyPoints(data.keyPoints || []);
+                        setStepsTaken(data.stepsTaken || []);
+                        setLinks(data.links || []);
+                        setExistingImages(data.images || []);
+                        if (data.recommendedProducts) {
+                            setProducts(data.recommendedProducts.map((p: any) => ({
+                                name: p.name,
+                                price: p.price,
+                                image: p.image || "",
+                                url: p.url || p.buyLink || ""
+                            })));
+                        }
+                    }
+                })
+                .catch(err => toast.error("Failed to fetch report for editing"))
+                .finally(() => setLoadingData(false));
+        }
+    }, [editId]);
+
     // Debounced automatic transcript fetching logic
     useEffect(() => {
+        if (isEditing) return; // Don't auto-fetch if editing
         const fetchTranscript = async () => {
             if (!consultationId || consultationId.length < 10) return;
             
@@ -103,7 +139,7 @@ function CreateReportContent() {
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [consultationId, user]);
+    }, [consultationId, user, isEditing]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -147,8 +183,8 @@ function CreateReportContent() {
     };
 
     const addProduct = () => {
-        if (!prodName.trim() || !prodPrice.trim()) {
-            toast.error("Please provide both Product Name and Price.");
+        if (!prodName.trim()) {
+            toast.error("Please provide a Product Name.");
             return;
         }
         setProducts([
@@ -218,22 +254,39 @@ function CreateReportContent() {
             images.forEach(img => {
                 formData.append("images", img.file);
             });
-
-            const response = await api.post("/report", formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
             
-            if (response.data.success) {
-                toast.success("Consultation report created successfully!");
-                const createdReport = response.data.data;
-                const newReportId = createdReport?._id || createdReport?.id;
+            existingImages.forEach(img => {
+                formData.append("existingImages", img);
+            });
 
-                if (newReportId) {
-                    window.open(`/consultant/reports/${newReportId}`, '_blank');
+            if (isEditing) {
+                const response = await api.patch(`/report/${editId}`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                
+                if (response.data.success) {
+                    toast.success("Report updated successfully!");
+                    router.push(`/consultant/reports/${editId}`);
                 }
-                router.push('/consultant/reports');
+            } else {
+                const response = await api.post("/report", formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                
+                if (response.data.success) {
+                    toast.success("Consultation report created successfully!");
+                    const createdReport = response.data.data;
+                    const newReportId = createdReport?._id || createdReport?.id;
+
+                    if (newReportId) {
+                        window.open(`/consultant/reports/${newReportId}`, '_blank');
+                    }
+                    router.push('/consultant/reports');
+                }
             }
         } catch (error: any) {
             console.error("Error finalizing report:", error);
@@ -253,20 +306,33 @@ function CreateReportContent() {
                         onClick={() => router.back()} 
                         className="w-fit text-slate-500 hover:text-slate-900 -ml-2 rounded-xl mb-2 font-bold"
                     >
-                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
+                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to {isEditing ? 'Details' : 'Reports'}
                     </Button>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
                             <FileText className="w-5 h-5" />
                         </div>
-                        Create Consultation Report
+                        {isEditing ? 'Edit Consultation Report' : 'Create Consultation Report'}
                     </h1>
-                    <p className="text-slate-500 mt-1 text-sm">Submit your conversation summary, key points, steps taken, and recommendations.</p>
+                    <p className="text-slate-500 mt-1 text-sm">{isEditing ? 'Update your conversation summary, key points, steps taken, and recommendations.' : 'Submit your conversation summary, key points, steps taken, and recommendations.'}</p>
+                </div>
+                
+                <div className="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+                    <Button className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700" onClick={handleFinalize} disabled={sending || loadingData}>
+                        {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                        {isEditing ? 'Update Report' : 'Submit Report'}
+                    </Button>
                 </div>
             </div>
 
-            {/* ROW 1: Conversation Transcript & Report Summary IN THE SAME ROW */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {loadingData ? (
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+            ) : (
+                <>
+                    {/* ROW 1: Conversation Transcript & Report Summary IN THE SAME ROW */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Conversation Transcript (Left side of Row 1) */}
                 <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm flex flex-col justify-between space-y-3">
@@ -451,7 +517,7 @@ function CreateReportContent() {
                             className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
                         />
                         <Input 
-                            placeholder="Price (e.g. €24.99)"
+                            placeholder="Price (optional, e.g. €24.99)"
                             value={prodPrice}
                             onChange={(e) => setProdPrice(e.target.value)}
                             className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
@@ -649,16 +715,19 @@ function CreateReportContent() {
                     {sending ? (
                         <>
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            Submitting Report...
+                            {isEditing ? 'Updating...' : 'Submitting...'}
                         </>
                     ) : (
                         <>
                             <Send className="h-5 w-5" />
-                            Submit Final Report
+                            {isEditing ? 'Update Final Report' : 'Submit Final Report'}
                         </>
                     )}
                 </Button>
             </div>
+            
+            </>
+            )}
 
         </div>
     );

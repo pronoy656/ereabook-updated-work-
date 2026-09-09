@@ -100,6 +100,29 @@ export default function NotificationDropdown({ iconColorClass = "text-slate-500 
 
   useEffect(() => {
     fetchNotifications(1, false);
+
+    const handleNewNotif = (event: any) => {
+      const data = event.detail;
+      if (!data) return;
+
+      const newNotifItem: NotificationItem = {
+        _id: data._id || data.id || `temp-${Date.now()}`,
+        title: data.title || "New Notification",
+        message: data.message || "",
+        type: data.type || "general",
+        relatedBooking: data.relatedBooking,
+        read: false,
+        createdAt: data.createdAt || new Date().toISOString(),
+        metadata: data.metadata,
+      };
+
+      setNotifications(prev => [newNotifItem, ...prev]);
+    };
+
+    window.addEventListener("fixpair:new-notification", handleNewNotif);
+    return () => {
+      window.removeEventListener("fixpair:new-notification", handleNewNotif);
+    };
   }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
