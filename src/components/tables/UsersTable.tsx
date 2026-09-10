@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { getImageUrl } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
+import { getSocket } from "@/lib/socket";
 
 interface User {
   _id: string;
@@ -18,6 +19,7 @@ interface User {
   email: string;
   role: string;
   status: string;
+  activeStatus?: boolean;
   createdAt: string;
   image?: string;
   stats?: {
@@ -149,6 +151,27 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
+
+  // Real-time status update via Socket.IO
+  React.useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleStatusChanged = (payload: { consultantId: string; activeStatus: boolean }) => {
+      if (!payload?.consultantId) return;
+      const targetId = String(payload.consultantId);
+      setUsers((prev) =>
+        prev.map((u) =>
+          String(u._id) === targetId ? { ...u, activeStatus: payload.activeStatus } : u
+        )
+      );
+    };
+
+    socket.on("consultant:status-changed", handleStatusChanged);
+    return () => {
+      socket.off("consultant:status-changed", handleStatusChanged);
+    };
+  }, []);
 
   // Handlers for actions
   const handleSignup = async (e: React.FormEvent) => {
@@ -645,19 +668,42 @@ export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        {user.image || (user as any).avatar || (user as any).profilePic || (user as any).profileImage ? (
-                          <img
-                            src={getImageUrl(user.image || (user as any).avatar || (user as any).profilePic || (user as any).profileImage)}
-                            alt={user.name}
-                            className="h-9 w-9 rounded-full object-cover border border-slate-100 dark:border-slate-700"
-                          />
-                        ) : (
-                          <div className="h-9 w-9 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold border border-blue-100 dark:border-blue-800/50">
-                            {getInitials(user.name)}
-                          </div>
-                        )}
+                        <div className="relative shrink-0">
+                          {user.image || (user as any).avatar || (user as any).profilePic || (user as any).profileImage ? (
+                            <img
+                              src={getImageUrl(user.image || (user as any).avatar || (user as any).profilePic || (user as any).profileImage)}
+                              alt={user.name}
+                              className="h-9 w-9 rounded-full object-cover border border-slate-100 dark:border-slate-700"
+                            />
+                          ) : (
+                            <div className="h-9 w-9 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold border border-blue-100 dark:border-blue-800/50">
+                              {getInitials(user.name)}
+                            </div>
+                          )}
+                          {role === 'CONSULTANT' && user.activeStatus !== undefined && (
+                            <span 
+                              className={cn(
+                                "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800",
+                                user.activeStatus ? "bg-emerald-500" : "bg-slate-400"
+                              )} 
+                              title={user.activeStatus ? "Online" : "Offline"}
+                            />
+                          )}
+                        </div>
                         <div className="flex flex-col">
-                          <span className="text-[14px] font-bold text-slate-800 dark:text-white">{user.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[14px] font-bold text-slate-800 dark:text-white">{user.name}</span>
+                            {role === 'CONSULTANT' && user.activeStatus !== undefined && (
+                              <span className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.2 rounded-full border",
+                                user.activeStatus 
+                                  ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800" 
+                                  : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                              )}>
+                                {user.activeStatus ? "Online" : "Offline"}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[13px] text-slate-400 dark:text-slate-500 font-medium">{user.email}</span>
                         </div>
                       </div>

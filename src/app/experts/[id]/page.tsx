@@ -7,6 +7,8 @@ import {
   Award, GraduationCap, Sparkles, QrCode, Smartphone
 } from 'lucide-react';
 import Footer from '@/components/landing-page/Footer';
+import { useConsultantStatus } from '@/hooks/useConsultantPresence';
+import { toast } from 'sonner';
 
 // Full detailed expert dataset mapped by ID
 const EXPERTS_DATA: Record<string, {
@@ -204,6 +206,12 @@ export default function ExpertDetailsPage({ params }: { params: Promise<{ id: st
   // Fallback to Expert #1 if ID is invalid or out of range
   const expert = EXPERTS_DATA[expertId] || EXPERTS_DATA["1"];
 
+  // Real-time presence status listener for this specific expert
+  const { isOnline } = useConsultantStatus(expertId, true, {
+    showToastOnChange: true,
+    consultantName: expert.name,
+  });
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-x-hidden">
       
@@ -250,8 +258,13 @@ export default function ExpertDetailsPage({ params }: { params: Promise<{ id: st
                   alt={expert.name} 
                   className="w-full h-full object-cover" 
                 />
-                <div className="absolute bottom-2 right-2 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-sm flex items-center justify-center text-white" title="Active on Fixpair App">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <div 
+                  className={`absolute bottom-2 right-2 w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-white transition-colors ${
+                    isOnline ? 'bg-emerald-500' : 'bg-slate-400'
+                  }`} 
+                  title={isOnline ? "Online on Fixpair" : "Offline"}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOnline ? 'animate-pulse' : ''}`} />
                 </div>
               </div>
 
@@ -260,6 +273,14 @@ export default function ExpertDetailsPage({ params }: { params: Promise<{ id: st
                 <div className="flex flex-wrap items-center gap-2.5 mb-2">
                   <span className={`text-xs font-bold px-3 py-1 rounded-full border ${expert.categoryBg}`}>
                     {expert.category}
+                  </span>
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border transition-colors ${
+                    isOnline 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                    {isOnline ? '● Online & Available' : '○ Currently Offline'}
                   </span>
                   <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
@@ -485,9 +506,36 @@ export default function ExpertDetailsPage({ params }: { params: Promise<{ id: st
                 Book a Session with {expert.name.split(' ')[0]}
               </h3>
 
-              <p className="text-xs text-slate-300 leading-relaxed mb-6 font-normal">
-                To schedule a 1-on-1 HD video consultation, send live messages, and receive post-session reports, download the <strong className="text-white font-bold">Fixpair Mobile App</strong>.
+              <p className="text-xs text-slate-300 leading-relaxed mb-4 font-normal">
+                To schedule a 1-on-1 HD video consultation, send live messages, and receive post-session reports, download the <strong className="text-white font-bold">Fixpair Mobile App</strong> or start an instant consultation.
               </p>
+
+              {/* Instant Call Action Button */}
+              <div className="mb-6">
+                <button
+                  disabled={!isOnline}
+                  onClick={() => {
+                    if (!isOnline) {
+                      toast.error("This consultant is currently offline and unavailable for instant consultation.");
+                      return;
+                    }
+                    toast.success(`Requesting instant consultation with ${expert.name}...`);
+                  }}
+                  className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+                    isOnline
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white cursor-pointer active:scale-95 shadow-emerald-500/20'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700/80 cursor-not-allowed opacity-75'
+                  }`}
+                >
+                  <Zap className={`w-4 h-4 ${isOnline ? 'text-white fill-white' : 'text-slate-500'}`} />
+                  {isOnline ? 'Call Now (Instant Video)' : 'Currently Offline'}
+                </button>
+                {!isOnline && (
+                  <p className="text-[11px] text-rose-400 font-medium text-center mt-2">
+                    Consultant is offline. Instant calls are temporarily unavailable.
+                  </p>
+                )}
+              </div>
 
               {/* QR Code Scanner Box */}
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-6 border border-white/10 flex items-center gap-4">

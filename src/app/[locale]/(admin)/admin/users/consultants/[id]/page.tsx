@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { ArrowLeft, User, Mail, Phone, Calendar as CalendarIcon, CheckCircle2, Video, Clock, Star } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
+import { getSocket } from '@/lib/socket';
 import { ConsultantStatCard } from '@/components/consultant/Overview/ConsultantStatCard';
 import { ConsultantPerformanceChart } from '@/components/admin/users/ConsultantPerformanceChart';
 
@@ -61,6 +62,24 @@ export default function ConsultantPerformancePage({ params }: { params: Promise<
     };
 
     fetchConsultantDetails();
+  }, [id]);
+
+  // Real-time presence listener
+  useEffect(() => {
+    if (!id) return;
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleStatusChanged = (payload: { consultantId: string; activeStatus: boolean }) => {
+      if (String(payload?.consultantId) === String(id)) {
+        setConsultant((prev: any) => prev ? { ...prev, activeStatus: payload.activeStatus } : prev);
+      }
+    };
+
+    socket.on("consultant:status-changed", handleStatusChanged);
+    return () => {
+      socket.off("consultant:status-changed", handleStatusChanged);
+    };
   }, [id]);
 
   const getTrendValue = (metric: any) => {

@@ -50,7 +50,6 @@ interface ReportDetail {
     stepsTaken?: string[];
     recommendedProducts?: {
         name: string;
-        price: string;
         image?: string;
         url?: string;
         buyLink?: string;
@@ -99,7 +98,7 @@ export default function ReportDetailsPage() {
 
     const getAssetUrl = (path: string) => {
         if (!path) return '';
-        if (path.startsWith('http')) return path;
+        if (path.startsWith('http') || path.startsWith('data:')) return path;
         const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api\/v1\/?$/, '');
         const normalizedPath = path.startsWith('/') ? path : `/${path}`;
         return `${baseUrl}${normalizedPath}`;
@@ -245,22 +244,23 @@ export default function ReportDetailsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {productsList.map((prod, idx) => (
                                 <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                                    {prod.image ? (
+                                    {prod.image && prod.image.trim() !== '' ? (
                                         <img src={getAssetUrl(prod.image)} alt={prod.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-100" />
                                     ) : (
                                         <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg shrink-0">
                                             🛍️
                                         </div>
                                     )}
-                                    <div className="flex flex-col justify-between flex-1 min-w-0 h-full">
+                                    <div className="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
                                         <h4 className="font-bold text-slate-900 text-sm line-clamp-2 leading-tight">{prod.name}</h4>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="font-bold text-[#2563EB] text-sm">{prod.price}</span>
-                                            <a href={prod.buyLink || prod.url || '#'} target="_blank" rel="noopener noreferrer"
-                                                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors">
-                                                Buy →
-                                            </a>
-                                        </div>
+                                        {(prod.buyLink || prod.url) && (
+                                            <div className="flex items-center justify-end mt-2">
+                                                <a href={prod.buyLink || prod.url} target="_blank" rel="noopener noreferrer"
+                                                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors">
+                                                    View / Buy →
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

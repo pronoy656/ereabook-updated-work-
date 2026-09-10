@@ -24,6 +24,15 @@ export interface IncomingCallPayload {
   consultationId?: string;
   bookingType?: string;
   type?: string;
+  user?: any;
+  caller?: any;
+  client?: any;
+  name?: string;
+  userName?: string;
+  clientName?: string;
+  avatar?: string;
+  image?: string;
+  [key: string]: any;
 }
 
 function getSocketUrl(): string {
@@ -35,6 +44,46 @@ function getSocketUrl(): string {
   } catch {
     return "http://10.10.7.106:5000";
   }
+}
+
+export function resolveCallerInfo(data: any) {
+  const name =
+    data?.callerName ||
+    data?.caller?.name ||
+    data?.user?.name ||
+    data?.userName ||
+    data?.clientName ||
+    data?.client?.name ||
+    data?.name ||
+    data?.consultation?.user?.name ||
+    data?.consultation?.name ||
+    data?.booking?.user?.name ||
+    "";
+
+  const image =
+    data?.callerAvatar ||
+    data?.callerImage ||
+    data?.caller?.avatar ||
+    data?.caller?.image ||
+    data?.user?.avatar ||
+    data?.user?.image ||
+    data?.user?.profileImage ||
+    data?.avatar ||
+    data?.image ||
+    data?.clientImage ||
+    data?.client?.image ||
+    data?.consultation?.user?.image ||
+    data?.consultation?.user?.avatar ||
+    null;
+
+  const bookingType =
+    data?.bookingType ||
+    data?.type ||
+    data?.consultation?.bookingType ||
+    data?.consultationType ||
+    "Instant Consultation";
+
+  return { name, image, bookingType };
 }
 
 export function useIncomingCallSocket() {
@@ -59,10 +108,12 @@ export function useIncomingCallSocket() {
       return;
     }
 
+    const rawToken = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
     const socketUrl = getSocketUrl();
     const socket: Socket = io(socketUrl, {
       transports: ["websocket", "polling"],
-      auth: { token: `Bearer ${token}` },
+      auth: { token: rawToken },
+      query: { token: rawToken },
     });
 
     socket.on("connect", () => {
@@ -71,21 +122,69 @@ export function useIncomingCallSocket() {
 
     // 1. Incoming Call Event
     socket.on("incoming-call", (payload: IncomingCallPayload) => {
-      console.log("📞 Incoming call received!", payload);
-      setIncomingCall(payload);
+      console.log("📞 Incoming call raw payload received:", payload);
+      const resolved = resolveCallerInfo(payload);
+
+      const normalizedPayload: IncomingCallPayload = {
+        ...payload,
+        callerName: resolved.name || payload.callerName || "Client",
+        callerImage: resolved.image || payload.callerImage,
+        callerAvatar: resolved.image || payload.callerAvatar,
+        bookingType: resolved.bookingType,
+      };
+
+      setIncomingCall(normalizedPayload);
 
       // Play looping ringtone
       audioManager.playRingtone();
 
       // Show OS Desktop Notification banner on screen corner
-      const caller = payload.callerName || "A client";
+      const caller = normalizedPayload.callerName || "A client";
       showDesktopNotification(`📞 Incoming Call: ${caller}`, {
-        body: "Click to answer the consultation call",
-        icon: payload.callerAvatar || payload.callerImage || "/favicon.png",
+        body: `Incoming ${normalizedPayload.bookingType || "consultation"} call. Click to answer.`,
+        icon: normalizedPayload.callerAvatar || normalizedPayload.callerImage || "/favicon.png",
         requireInteraction: true,
         tag: payload.sessionId || "incoming-call",
         url: `/consultant/overview`,
       }).catch(console.error);
+
+      // If caller name is missing or generic, fetch active bookings in parallel to resolve real name
+      const consId = payload.consultationId || payload.sessionId;
+      if (!resolved.name || resolved.name === "Client" || resolved.name.toLowerCase() === "a user") {
+        api
+          .get("/consultation/my-bookings")
+          .then((res) => {
+            const bookings = res.data?.data || res.data;
+            if (Array.isArray(bookings)) {
+              const matched = bookings.find(
+                (b: any) =>
+                  b._id === consId ||
+                  b.id === consId ||
+                  b.sessionId === consId ||
+                  b.sessionId === payload.sessionId
+              );
+              if (matched) {
+                const fetchedName =
+                  matched.user?.name || matched.name || matched.clientName;
+                const fetchedImage =
+                  matched.user?.image || matched.user?.avatar || matched.image;
+                if (fetchedName) {
+                  setIncomingCall((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          callerName: fetchedName,
+                          callerImage: fetchedImage || prev.callerImage,
+                          callerAvatar: fetchedImage || prev.callerAvatar,
+                        }
+                      : null
+                  );
+                }
+              }
+            }
+          })
+          .catch(() => {});
+      }
     });
 
     // 2. Call Cancelled / Ended / Rejected Handlers

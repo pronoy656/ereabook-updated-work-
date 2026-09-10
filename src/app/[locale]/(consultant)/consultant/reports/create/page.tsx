@@ -16,9 +16,9 @@ import { useAuth } from "@/context/AuthContext";
 
 interface ProductInput {
     name: string;
-    price: string;
-    image: string;
-    url: string;
+    image?: string;
+    url?: string;
+    buyLink?: string;
 }
 
 function CreateReportContent() {
@@ -49,7 +49,6 @@ function CreateReportContent() {
     // Recommended Products
     const [products, setProducts] = useState<ProductInput[]>([]);
     const [prodName, setProdName] = useState("");
-    const [prodPrice, setProdPrice] = useState("");
     const [prodImageFile, setProdImageFile] = useState<File | null>(null);
     const [prodImagePreview, setProdImagePreview] = useState("");
     const [prodUrl, setProdUrl] = useState("");
@@ -75,12 +74,12 @@ function CreateReportContent() {
                         setStepsTaken(data.stepsTaken || []);
                         setLinks(data.links || []);
                         setExistingImages(data.images || []);
-                        if (data.recommendedProducts) {
+                        if (data.recommendedProducts && Array.isArray(data.recommendedProducts)) {
                             setProducts(data.recommendedProducts.map((p: any) => ({
                                 name: p.name,
-                                price: p.price,
                                 image: p.image || "",
-                                url: p.url || p.buyLink || ""
+                                url: p.url || p.buyLink || "",
+                                buyLink: p.buyLink || p.url || ""
                             })));
                         }
                     }
@@ -191,16 +190,18 @@ function CreateReportContent() {
             ...products,
             {
                 name: prodName.trim(),
-                price: prodPrice.trim(),
-                image: prodImagePreview || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80",
-                url: prodUrl.trim() || "#"
+                image: prodImagePreview || "",
+                url: prodUrl.trim() || "",
+                buyLink: prodUrl.trim() || ""
             }
         ]);
         setProdName("");
-        setProdPrice("");
         setProdImageFile(null);
         setProdImagePreview("");
         setProdUrl("");
+        if (prodFileInputRef.current) {
+            prodFileInputRef.current.value = "";
+        }
     };
 
     const removeProduct = (index: number) => {
@@ -219,78 +220,109 @@ function CreateReportContent() {
 
         setSending(true);
         try {
-            const formData = new FormData();
-            if (consultationId) {
-                formData.append("consultationId", consultationId);
-            }
-            formData.append("conversation", conversation);
-            formData.append("summary", reportSummary);
-            formData.append("reportSummary", reportSummary);
-            formData.append("notes", reportSummary);
+            const formattedProducts = products.map(p => ({
+                name: p.name,
+                image: p.image || "",
+                url: p.url || p.buyLink || "",
+                buyLink: p.url || p.buyLink || ""
+            }));
 
-            keyPoints.forEach(point => {
-                formData.append("keyPoints", point);
-            });
+            const jsonPayload: any = {
+                ...(consultationId ? { consultationId } : {}),
+                conversation: conversation || "",
+                summary: reportSummary,
+                reportSummary: reportSummary,
+                notes: reportSummary,
+                keyPoints: keyPoints || [],
+                stepsTaken: stepsTaken || [],
+                recommendedProducts: formattedProducts,
+                links: links || [],
+                existingImages: existingImages || [],
+                images: existingImages || []
+            };
 
-            stepsTaken.forEach(step => {
-                formData.append("stepsTaken", step);
-            });
-
-            if (products.length > 0) {
-                const formattedProducts = products.map(p => ({
-                    name: p.name,
-                    price: p.price,
-                    image: p.image,
-                    url: p.url,
-                    buyLink: p.url
-                }));
-                formData.append("recommendedProducts", JSON.stringify(formattedProducts));
-            }
-            
-            links.forEach(link => {
-                formData.append("links", link);
-            });
-            
-            images.forEach(img => {
-                formData.append("images", img.file);
-            });
-            
-            existingImages.forEach(img => {
-                formData.append("existingImages", img);
-            });
-
-            if (isEditing) {
-                const response = await api.patch(`/report/${editId}`, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
+            // If no new File objects are being uploaded, send standard JSON to ensure all arrays/objects are properly typed for Zod
+            if (images.length === 0) {
+                if (isEditing) {
+                    const response = await api.patch(`/report/${editId}`, jsonPayload);
+                    if (response.data.success) {
+                        toast.success("Report updated successfully!");
+                        router.push(`/consultant/reports/${editId}`);
                     }
-                });
-                
-                if (response.data.success) {
-                    toast.success("Report updated successfully!");
-                    router.push(`/consultant/reports/${editId}`);
+                } else {
+                    const response = await api.post("/report", jsonPayload);
+                    if (response.data.success) {
+                        toast.success("Consultation report created successfully!");
+                        const createdReport = response.data.data;
+                        const newReportId = createdReport?._id || createdReport?.id;
+
+                        if (newReportId) {
+                            window.open(`/consultant/reports/${newReportId}`, '_blank');
+                        }
+                        router.push('/consultant/reports');
+                    }
                 }
             } else {
-                const response = await api.post("/report", formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
+                // When new files are uploaded, use FormData
+                const formData = new FormData();
+                formData.append("data", JSON.stringify(jsonPayload));
+
+                if (consultationId) {
+                    formData.append("consultationId", consultationId);
+                }
+                formData.append("conversation", conversation);
+                formData.append("summary", reportSummary);
+                formData.append("reportSummary", reportSummary);
+                formData.append("notes", reportSummary);
+
+                keyPoints.forEach(point => {
+                    formData.append("keyPoints", point);
+                });
+
+                stepsTaken.forEach(step => {
+                    formData.append("stepsTaken", step);
+                });
+
+                if (formattedProducts.length > 0) {
+                    formData.append("recommendedProducts", JSON.stringify(formattedProducts));
+                }
+                
+                links.forEach(link => {
+                    formData.append("links", link);
                 });
                 
-                if (response.data.success) {
-                    toast.success("Consultation report created successfully!");
-                    const createdReport = response.data.data;
-                    const newReportId = createdReport?._id || createdReport?.id;
+                images.forEach(img => {
+                    formData.append("images", img.file);
+                });
+                
+                existingImages.forEach(img => {
+                    formData.append("existingImages", img);
+                });
 
-                    if (newReportId) {
-                        window.open(`/consultant/reports/${newReportId}`, '_blank');
+                if (isEditing) {
+                    const response = await api.patch(`/report/${editId}`, formData);
+                    if (response.data.success) {
+                        toast.success("Report updated successfully!");
+                        router.push(`/consultant/reports/${editId}`);
                     }
-                    router.push('/consultant/reports');
+                } else {
+                    const response = await api.post("/report", formData);
+                    if (response.data.success) {
+                        toast.success("Consultation report created successfully!");
+                        const createdReport = response.data.data;
+                        const newReportId = createdReport?._id || createdReport?.id;
+
+                        if (newReportId) {
+                            window.open(`/consultant/reports/${newReportId}`, '_blank');
+                        }
+                        router.push('/consultant/reports');
+                    }
                 }
             }
         } catch (error: any) {
             console.error("Error finalizing report:", error);
-            toast.error(error.response?.data?.message || "Failed to finalize report.");
+            const errDetail = error.response?.data?.errorMessages?.map((e: any) => e.message).join(", ");
+            toast.error(errDetail || error.response?.data?.message || "Failed to finalize report.");
         } finally {
             setSending(false);
         }
@@ -315,13 +347,6 @@ function CreateReportContent() {
                         {isEditing ? 'Edit Consultation Report' : 'Create Consultation Report'}
                     </h1>
                     <p className="text-slate-500 mt-1 text-sm">{isEditing ? 'Update your conversation summary, key points, steps taken, and recommendations.' : 'Submit your conversation summary, key points, steps taken, and recommendations.'}</p>
-                </div>
-                
-                <div className="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
-                    <Button className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700" onClick={handleFinalize} disabled={sending || loadingData}>
-                        {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                        {isEditing ? 'Update Report' : 'Submit Report'}
-                    </Button>
                 </div>
             </div>
 
@@ -509,7 +534,7 @@ function CreateReportContent() {
                 </Label>
 
                 <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <Input 
                             placeholder="Product Name (e.g. Pipe Wrench)"
                             value={prodName}
@@ -517,13 +542,7 @@ function CreateReportContent() {
                             className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
                         />
                         <Input 
-                            placeholder="Price (optional, e.g. €24.99)"
-                            value={prodPrice}
-                            onChange={(e) => setProdPrice(e.target.value)}
-                            className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
-                        />
-                        <Input 
-                            placeholder="Buy Link (optional, e.g. https://...)"
+                            placeholder="Buy / Reference Link (optional, e.g. https://...)"
                             value={prodUrl}
                             onChange={(e) => setProdUrl(e.target.value)}
                             className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
@@ -574,6 +593,7 @@ function CreateReportContent() {
                                         e.stopPropagation();
                                         setProdImageFile(null);
                                         setProdImagePreview("");
+                                        if (prodFileInputRef.current) prodFileInputRef.current.value = "";
                                     }}
                                     className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"
                                 >
@@ -600,10 +620,20 @@ function CreateReportContent() {
                         {products.map((prod, idx) => (
                             <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm group">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <img src={prod.image} alt={prod.name} className="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0" />
+                                    {prod.image ? (
+                                        <img src={prod.image} alt={prod.name} className="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-base shrink-0">
+                                            🛍️
+                                        </div>
+                                    )}
                                     <div className="min-w-0">
                                         <p className="text-xs font-bold text-slate-900 truncate">{prod.name}</p>
-                                        <p className="text-[11px] font-bold text-blue-600">{prod.price}</p>
+                                        {prod.url && prod.url !== '#' && (
+                                            <a href={prod.url} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-blue-600 hover:underline truncate block">
+                                                {prod.url}
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                                 <button 

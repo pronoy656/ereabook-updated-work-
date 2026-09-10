@@ -5,13 +5,15 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import api from '@/lib/axios';
-import { initWebPush } from '@/lib/firebase';
+import { initWebPush, getStoredFcmToken } from '@/lib/firebase';
+import { disconnectSocket } from '@/lib/socket';
 
 interface AuthContextType {
   user: any | null;
   loading: boolean;
   login: (token: string, userData?: any) => void;
   logout: () => Promise<void>;
+  updateUser: (data: Partial<any>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +22,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  const updateUser = (data: Partial<any>) => {
+    setUser((prev: any) => (prev ? { ...prev, ...data } : data));
+  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -80,33 +86,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      let role = (user?.role || user?.userType || '').toUpperCase();
-      if (!role) {
-        const token = Cookies.get('accessToken');
-        if (token) {
-          try {
-            const decoded: any = jwtDecode(token);
-            role = (decoded?.role || decoded?.userType || '').toUpperCase();
-          } catch {}
-        }
-      }
+      const fcmToken = getStoredFcmToken();
 
-      if (role === 'CONSULTANT') {
-        await api.patch('/user/toggle-status', {
-          activeStatus: false,
-        });
-      }
+      // Call explicit logout endpoint on backend
+      await api.post('/auth/logout', {
+        deviceToken: fcmToken || undefined,
+      }).catch((err) => {
+        console.warn("Notice: /auth/logout request:", err?.response?.data?.message || err.message);
+      });
     } catch (err) {
-      console.error("Failed to update status to unavailable on logout:", err);
+      console.error("Logout error:", err);
     } finally {
+      // 1. Disconnect socket
+      disconnectSocket();
+
+      // 2. Clear stored auth tokens & user state
       Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        } catch {}
+      }
       setUser(null);
+
+      // 3. Redirect to login screen
       router.push('/login');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

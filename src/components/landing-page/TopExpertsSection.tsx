@@ -4,7 +4,21 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, ChevronLeft, ChevronRight, ShieldCheck, Star, Calendar, Users, Bot, Zap } from 'lucide-react';
 
-const EXPERTS_EN = [
+interface ExpertItem {
+  id: number;
+  name: string;
+  role: string;
+  category: string;
+  categoryBg: string;
+  rating: number;
+  reviews: string;
+  exp: string;
+  image: string;
+  tags: string[];
+  activeStatus?: boolean;
+}
+
+const EXPERTS_EN: ExpertItem[] = [
   {
     id: 1,
     name: "Sarah Johnson",
@@ -79,7 +93,7 @@ const EXPERTS_EN = [
   }
 ];
 
-const EXPERTS_DE = [
+const EXPERTS_DE: ExpertItem[] = [
   {
     id: 1,
     name: "Sarah Johnson",
@@ -156,11 +170,13 @@ const EXPERTS_DE = [
 
 import { useLandingLanguage } from '@/context/LandingLanguageContext';
 import ScrollReveal from '@/components/landing-page/ScrollReveal';
+import { useConsultantsPresence } from '@/hooks/useConsultantPresence';
 
 export default function TopExpertsSection() {
   const [expertIdx, setExpertIdx] = useState(0);
   const { locale, t } = useLandingLanguage();
-  const expertsList = locale === 'de' ? EXPERTS_DE : EXPERTS_EN;
+  const rawExpertsList = locale === 'de' ? EXPERTS_DE : EXPERTS_EN;
+  const { consultants: expertsList } = useConsultantsPresence(rawExpertsList);
 
   const maxExpertIdx = Math.max(0, expertsList.length - 4);
   const nextExpert = () => setExpertIdx(p => (p >= maxExpertIdx ? 0 : p + 1));
@@ -221,13 +237,25 @@ export default function TopExpertsSection() {
                 className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 bg-white rounded-3xl border border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.04)] hover:shadow-2xl hover:border-blue-300 hover:-translate-y-2 transition-all duration-300 p-6 flex flex-col justify-between group"
               >
                 <div>
-                  {/* Header row: Pill & Verified Icon */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className={`${expert.categoryBg} text-xss font-bold px-2.5 py-1 rounded-md group-hover:scale-105 transition-transform`}>
+                  {/* Header row: Pill, Presence Status & Verified Icon */}
+                  <div className="flex items-center justify-between mb-4 gap-2">
+                    <span className={`${expert.categoryBg} text-xss font-bold px-2.5 py-1 rounded-md group-hover:scale-105 transition-transform truncate`}>
                       {expert.category}
                     </span>
-                    <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
-                      <ShieldCheck className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                        expert.activeStatus !== false 
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200/80' 
+                          : 'bg-slate-100 text-slate-500 border-slate-200'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          expert.activeStatus !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                        }`} />
+                        {expert.activeStatus !== false ? 'Online' : 'Offline'}
+                      </span>
+                      <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" title="Verified Expert">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
                     </div>
                   </div>
 

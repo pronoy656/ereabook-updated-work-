@@ -79,6 +79,11 @@ export async function initWebPush(userJwtToken?: string): Promise<string | null>
 
     if (currentToken) {
       console.log("🔥 FCM Web Push Token generated successfully:", currentToken);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("fcm_device_token", currentToken);
+        } catch {}
+      }
 
       // Save device token to Fixpair backend
       const token = userJwtToken || Cookies.get("accessToken");
@@ -128,3 +133,25 @@ export async function initWebPush(userJwtToken?: string): Promise<string | null>
     return null;
   }
 }
+
+/**
+ * Get stored FCM push notification device token if available
+ */
+export function getStoredFcmToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("fcm_device_token");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get active FCM device token or retrieve from cache
+ */
+export async function getFcmToken(): Promise<string | null> {
+  const cached = getStoredFcmToken();
+  if (cached) return cached;
+  return await initWebPush();
+}
+

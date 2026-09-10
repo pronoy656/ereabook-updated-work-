@@ -23,9 +23,9 @@ interface CreateReportModalProps {
 
 interface ProductInput {
     name: string;
-    price: string;
-    image: string;
-    url: string;
+    image?: string;
+    url?: string;
+    buyLink?: string;
 }
 
 export function CreateReportModal({ open, onOpenChange, consultationId: initialId, onSuccess }: CreateReportModalProps) {
@@ -47,9 +47,10 @@ export function CreateReportModal({ open, onOpenChange, consultationId: initialI
     // Recommended Products
     const [products, setProducts] = useState<ProductInput[]>([]);
     const [prodName, setProdName] = useState("");
-    const [prodPrice, setProdPrice] = useState("");
-    const [prodImage, setProdImage] = useState("");
+    const [prodImageFile, setProdImageFile] = useState<File | null>(null);
+    const [prodImagePreview, setProdImagePreview] = useState("");
     const [prodUrl, setProdUrl] = useState("");
+    const prodFileInputRef = useRef<HTMLInputElement>(null);
 
     const [sending, setSending] = useState(false);
     const [fetchingTranscript, setFetchingTranscript] = useState(false);
@@ -71,8 +72,8 @@ export function CreateReportModal({ open, onOpenChange, consultationId: initialI
             setNewStep("");
             setProducts([]);
             setProdName("");
-            setProdPrice("");
-            setProdImage("");
+            setProdImageFile(null);
+            setProdImagePreview("");
             setProdUrl("");
         }
     }, [open, initialId]);
@@ -170,23 +171,26 @@ export function CreateReportModal({ open, onOpenChange, consultationId: initialI
     };
 
     const addProduct = () => {
-        if (!prodName.trim() || !prodPrice.trim()) {
-            toast.error("Please provide both Product Name and Price.");
+        if (!prodName.trim()) {
+            toast.error("Please provide a Product Name.");
             return;
         }
         setProducts([
             ...products,
             {
                 name: prodName.trim(),
-                price: prodPrice.trim(),
-                image: prodImage.trim() || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=300&q=80",
-                url: prodUrl.trim() || "#"
+                image: prodImagePreview || "",
+                url: prodUrl.trim() || "",
+                buyLink: prodUrl.trim() || ""
             }
         ]);
         setProdName("");
-        setProdPrice("");
-        setProdImage("");
+        setProdImageFile(null);
+        setProdImagePreview("");
         setProdUrl("");
+        if (prodFileInputRef.current) {
+            prodFileInputRef.current.value = "";
+        }
     };
 
     const removeProduct = (index: number) => {
@@ -205,56 +209,91 @@ export function CreateReportModal({ open, onOpenChange, consultationId: initialI
 
         setSending(true);
         try {
-            const formData = new FormData();
-            if (consultationId) {
-                formData.append("consultationId", consultationId);
-            }
-            formData.append("conversation", conversation);
-            formData.append("summary", reportSummary);
-            formData.append("reportSummary", reportSummary);
-            formData.append("notes", reportSummary);
+            const formattedProducts = products.map(p => ({
+                name: p.name,
+                image: p.image || "",
+                url: p.url || p.buyLink || "",
+                buyLink: p.url || p.buyLink || ""
+            }));
 
-            keyPoints.forEach(point => {
-                formData.append("keyPoints", point);
-            });
+            const jsonPayload: any = {
+                ...(consultationId ? { consultationId } : {}),
+                conversation: conversation || "",
+                summary: reportSummary,
+                reportSummary: reportSummary,
+                notes: reportSummary,
+                keyPoints: keyPoints || [],
+                stepsTaken: stepsTaken || [],
+                recommendedProducts: formattedProducts,
+                links: links || [],
+                images: []
+            };
 
-            stepsTaken.forEach(step => {
-                formData.append("stepsTaken", step);
-            });
+            // If no new File objects are being uploaded, send standard JSON to ensure all arrays/objects are properly typed for Zod
+            if (images.length === 0) {
+                const response = await api.post("/report", jsonPayload);
+                if (response.data.success) {
+                    toast.success("Consultation report created successfully!");
+                    const createdReport = response.data.data;
+                    const newReportId = createdReport?._id || createdReport?.id;
 
-            if (products.length > 0) {
-                formData.append("recommendedProducts", JSON.stringify(products));
-            }
-            
-            links.forEach(link => {
-                formData.append("links", link);
-            });
-            
-            images.forEach(img => {
-                formData.append("images", img.file);
-            });
+                    onOpenChange(false);
+                    if (onSuccess) onSuccess();
 
-            const response = await api.post("/report", formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
+                    if (newReportId) {
+                        window.open(`/consultant/reports/${newReportId}`, '_blank');
+                    }
                 }
-            });
-            
-            if (response.data.success) {
-                toast.success("Consultation report created successfully!");
-                const createdReport = response.data.data;
-                const newReportId = createdReport?._id || createdReport?.id;
+            } else {
+                const formData = new FormData();
+                formData.append("data", JSON.stringify(jsonPayload));
 
-                onOpenChange(false);
-                if (onSuccess) onSuccess();
+                if (consultationId) {
+                    formData.append("consultationId", consultationId);
+                }
+                formData.append("conversation", conversation);
+                formData.append("summary", reportSummary);
+                formData.append("reportSummary", reportSummary);
+                formData.append("notes", reportSummary);
 
-                if (newReportId) {
-                    window.open(`/consultant/reports/${newReportId}`, '_blank');
+                keyPoints.forEach(point => {
+                    formData.append("keyPoints", point);
+                });
+
+                stepsTaken.forEach(step => {
+                    formData.append("stepsTaken", step);
+                });
+
+                if (formattedProducts.length > 0) {
+                    formData.append("recommendedProducts", JSON.stringify(formattedProducts));
+                }
+                
+                links.forEach(link => {
+                    formData.append("links", link);
+                });
+                
+                images.forEach(img => {
+                    formData.append("images", img.file);
+                });
+
+                const response = await api.post("/report", formData);
+                if (response.data.success) {
+                    toast.success("Consultation report created successfully!");
+                    const createdReport = response.data.data;
+                    const newReportId = createdReport?._id || createdReport?.id;
+
+                    onOpenChange(false);
+                    if (onSuccess) onSuccess();
+
+                    if (newReportId) {
+                        window.open(`/consultant/reports/${newReportId}`, '_blank');
+                    }
                 }
             }
         } catch (error: any) {
             console.error("Error finalizing report:", error);
-            toast.error(error.response?.data?.message || "Failed to finalize report.");
+            const errDetail = error.response?.data?.errorMessages?.map((e: any) => e.message).join(", ");
+            toast.error(errDetail || error.response?.data?.message || "Failed to finalize report.");
         } finally {
             setSending(false);
         }
@@ -450,74 +489,128 @@ export function CreateReportModal({ open, onOpenChange, consultationId: initialI
 
                     </div>
 
-                    {/* ROW 3: Recommended Products & Tools */}
+                    {/* ROW 3: Recommended Products & Tools (With Full-Width Photo Attachment Box & Add Product Button Below) */}
                     <div className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-sm space-y-4">
-                            <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                <ShoppingBag className="w-4 h-4 text-emerald-600" />
-                                <span>Recommended Products & Tools</span>
-                            </Label>
+                        <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                            <span>Recommended Products & Tools</span>
+                        </Label>
 
-                            <div className="space-y-2 bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
+                        <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <Input 
                                     placeholder="Product Name (e.g. Pipe Wrench)"
                                     value={prodName}
                                     onChange={(e) => setProdName(e.target.value)}
-                                    className="h-10 rounded-xl bg-white border-slate-200 text-xs font-medium"
+                                    className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
                                 />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Input 
-                                        placeholder="Price (e.g. €24.99)"
-                                        value={prodPrice}
-                                        onChange={(e) => setProdPrice(e.target.value)}
-                                        className="h-10 rounded-xl bg-white border-slate-200 text-xs font-medium"
-                                    />
-                                    <Input 
-                                        placeholder="Image URL (optional)"
-                                        value={prodImage}
-                                        onChange={(e) => setProdImage(e.target.value)}
-                                        className="h-10 rounded-xl bg-white border-slate-200 text-xs font-medium"
-                                    />
-                                </div>
-                                <div className="flex gap-2 pt-1">
-                                    <Input 
-                                        placeholder="Buy Link (optional)"
-                                        value={prodUrl}
-                                        onChange={(e) => setProdUrl(e.target.value)}
-                                        className="h-10 rounded-xl bg-white border-slate-200 text-xs font-medium"
-                                    />
-                                    <Button 
-                                        type="button"
-                                        onClick={addProduct} 
-                                        className="h-10 rounded-xl px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 shadow-sm"
-                                    >
-                                        <Plus className="h-4 w-4 mr-1" /> Add
-                                    </Button>
-                                </div>
+                                <Input 
+                                    placeholder="Buy / Reference Link (optional, e.g. https://...)"
+                                    value={prodUrl}
+                                    onChange={(e) => setProdUrl(e.target.value)}
+                                    className="h-11 rounded-xl bg-white border-slate-200 text-xs font-medium"
+                                />
                             </div>
 
-                            {products.length > 0 && (
-                                <div className="space-y-2">
-                                    {products.map((prod, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-100 shadow-sm group">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <img src={prod.image} alt={prod.name} className="w-10 h-10 rounded-xl object-cover border border-slate-100 shrink-0" />
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-bold text-slate-900 truncate">{prod.name}</p>
-                                                    <p className="text-[11px] font-bold text-blue-600">{prod.price}</p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                type="button"
-                                                onClick={() => removeProduct(idx)}
-                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </button>
-                                        </div>
-                                    ))}
+                            {/* FULL-WIDTH PHOTO ATTACHMENT BOX */}
+                            <div 
+                                className="border-2 border-dashed border-emerald-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-emerald-50/40 hover:bg-emerald-50/70 transition-all cursor-pointer group w-full"
+                                onClick={() => prodFileInputRef.current?.click()}
+                            >
+                                <input 
+                                    type="file" 
+                                    ref={prodFileInputRef} 
+                                    className="hidden" 
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setProdImageFile(file);
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                setProdImagePreview(reader.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform shrink-0">
+                                        <ImageIcon className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-xs font-bold text-slate-800">
+                                            {prodImageFile ? `Attached Photo: ${prodImageFile.name}` : "Attach Product Photo (Click to upload)"}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500 font-medium">Click to select photo for this product</p>
+                                    </div>
                                 </div>
-                            )}
+
+                                {prodImagePreview && (
+                                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-emerald-300 shrink-0">
+                                        <img src={prodImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setProdImageFile(null);
+                                                setProdImagePreview("");
+                                                if (prodFileInputRef.current) prodFileInputRef.current.value = "";
+                                            }}
+                                            className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ADD PRODUCT BUTTON (POSITIONED BELOW ATTACH PRODUCT PHOTO) */}
+                            <div className="flex justify-end pt-1">
+                                <Button 
+                                    type="button"
+                                    onClick={addProduct} 
+                                    className="w-full sm:w-auto h-11 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md rounded-xl flex items-center justify-center gap-2"
+                                >
+                                    <Plus className="h-4 w-4" /> Add Product
+                                </Button>
+                            </div>
                         </div>
+
+                        {products.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                                {products.map((prod, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm group">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            {prod.image ? (
+                                                <img src={prod.image} alt={prod.name} className="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0" />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-base shrink-0">
+                                                    🛍️
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-bold text-slate-900 truncate">{prod.name}</p>
+                                                {prod.url && prod.url !== '#' && (
+                                                    <a href={prod.url} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium text-blue-600 hover:underline truncate block">
+                                                        {prod.url}
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => removeProduct(idx)}
+                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-2 shrink-0"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     {/* ROW 4: Helpful Links & Attached Photos (2-Column) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

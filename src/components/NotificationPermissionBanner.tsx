@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Bell, X, AlertTriangle, CheckCircle2, Volume2 } from "lucide-react";
+import { Bell, X, AlertTriangle } from "lucide-react";
 import { requestDesktopNotificationPermission, showDesktopNotification } from "@/lib/notifications";
 import { audioManager } from "@/lib/audioManager";
 import { initWebPush } from "@/lib/firebase";
 import { toast } from "sonner";
 
 export default function NotificationPermissionBanner() {
+  const [mounted, setMounted] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("granted");
   const [dismissed, setDismissed] = useState(false);
-  const [testing, setTesting] = useState(false);
 
   const checkPermission = () => {
     if (typeof window === "undefined" || !("Notification" in window)) {
@@ -21,14 +21,14 @@ export default function NotificationPermissionBanner() {
   };
 
   useEffect(() => {
+    setMounted(true);
     checkPermission();
 
-    // Re-check permission when window regains focus (e.g. after changing settings in browser)
     window.addEventListener("focus", checkPermission);
     return () => window.removeEventListener("focus", checkPermission);
   }, []);
 
-  if (permission === "granted" || permission === "unsupported" || dismissed) {
+  if (!mounted || permission === "granted" || permission === "unsupported" || dismissed) {
     return null;
   }
 
@@ -57,18 +57,6 @@ export default function NotificationPermissionBanner() {
       console.error(e);
       toast.error("Failed to request permission: " + (e?.message || e));
     }
-  };
-
-  const handleTest = () => {
-    setTesting(true);
-    audioManager.unlockAudio();
-    audioManager.playNotificationChime();
-    showDesktopNotification("🔔 Fixpair Test Alert", {
-      body: "This is how incoming call and request alerts will appear on your screen corner!",
-      icon: "/favicon.png",
-      requireInteraction: false,
-    });
-    setTimeout(() => setTesting(false), 2000);
   };
 
   return (

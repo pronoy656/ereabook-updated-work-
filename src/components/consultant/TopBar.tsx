@@ -33,6 +33,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/utils";
+import { getSocket } from "@/lib/socket";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { useTranslations } from "next-intl";
@@ -46,7 +47,7 @@ const getInitials = (name?: string) => {
 
 export default function TopBar() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [isAvailable, setIsAvailable] = useState(user?.activeStatus ?? true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
@@ -65,6 +66,7 @@ export default function TopBar() {
           setProfileData(response.data.data);
           if (response.data.data.activeStatus !== undefined) {
             setIsAvailable(response.data.data.activeStatus);
+            updateUser({ activeStatus: response.data.data.activeStatus });
           }
         }
       } catch (err) {
@@ -73,7 +75,29 @@ export default function TopBar() {
     };
     
     fetchStatus();
-  }, [user]);
+  }, [user?.id, user?._id]);
+
+  // Listen for real-time status update via Socket.IO
+  useEffect(() => {
+    const currentId = user?._id || user?.id || profileData?._id || profileData?.id;
+    if (!currentId) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleStatusChanged = (payload: { consultantId: string; activeStatus: boolean }) => {
+      if (String(payload?.consultantId) === String(currentId)) {
+        setIsAvailable(payload.activeStatus);
+        updateUser({ activeStatus: payload.activeStatus });
+      }
+    };
+
+    socket.on("consultant:status-changed", handleStatusChanged);
+
+    return () => {
+      socket.off("consultant:status-changed", handleStatusChanged);
+    };
+  }, [user?._id, user?.id, profileData?._id, profileData?.id, updateUser]);
 
   const updateStatus = async (newStatus: boolean) => {
     try {
@@ -82,7 +106,10 @@ export default function TopBar() {
         activeStatus: newStatus
       });
       if (response.data.success) {
-        toast.success(`Status updated to ${newStatus ? 'Available' : 'Unavailable'}`);
+        const finalStatus = response.data.data?.activeStatus !== undefined ? response.data.data.activeStatus : newStatus;
+        setIsAvailable(finalStatus);
+        updateUser({ activeStatus: finalStatus });
+        toast.success(`Status updated to ${finalStatus ? 'Available' : 'Unavailable'}`);
       } else {
         setIsAvailable(!newStatus);
         toast.error("Failed to update status");
