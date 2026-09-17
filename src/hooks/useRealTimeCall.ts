@@ -215,7 +215,11 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
 
         if (mediaType === 'audio') {
           console.log(`%c🎤 AUDIO TRACK FOUND: Playing remote audio track for user ${user.uid}...`, 'color: #ffffff; background: #D97706; padding: 2px; border-radius: 2px;');
-          user.audioTrack?.play();
+          try {
+            user.audioTrack?.play();
+          } catch (audioPlayErr) {
+            console.warn("Autoplay notice for remote audio:", audioPlayErr);
+          }
         } else if (mediaType === 'video') {
           console.log(`%c🎥 VIDEO TRACK FOUND: Remote video track loaded for user ${user.uid}.`, 'color: #ffffff; background: #2563EB; padding: 2px; border-radius: 2px;');
         }
@@ -319,8 +323,11 @@ export function useRealTimeCall({ appId, channel, token, uid = null, consultatio
           return;
         }
 
+        const cleanToken = (!token || token === 'null' || token === 'undefined' || token === '') ? null : token.trim();
+        const numericUid = uid !== undefined && uid !== null && !isNaN(Number(uid)) ? Number(uid) : null;
+
         if (client.connectionState === 'DISCONNECTED') {
-          await client.join(appId, channel, token, uid);
+          await client.join(appId.trim(), channel.trim(), cleanToken, numericUid);
         }
 
         if (!mounted) return;

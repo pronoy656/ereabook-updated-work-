@@ -277,10 +277,27 @@ export default function IncomingRequests() {
         toast.success(response.data.message || "Callback initiated successfully!");
         
         const resData = response.data?.data || response.data;
-        const sessionId = resData?.sessionId || resData?.id || resData?._id || resData?.session?.sessionId || resData?.session?._id;
-        const channelName = resData?.channelName || resData?.session?.channelName;
-        const token = resData?.token || resData?.session?.token;
-        const uid = resData?.uid || resData?.session?.uid;
+        let sessionId = resData?.sessionId || resData?.id || resData?._id || resData?.session?.sessionId || resData?.session?._id;
+        let channelName = resData?.channelName || resData?.session?.channelName;
+        let token = resData?.token || resData?.session?.token;
+        let uid = resData?.uid || resData?.session?.uid;
+        let appId = resData?.appId || resData?.session?.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID;
+
+        // If sessionId is found, call /video-session/join to register consultant join on the backend
+        if (sessionId) {
+          try {
+            const joinRes = await api.post('/video-session/join', { sessionId }).catch(() => null);
+            const joinData = joinRes?.data?.data || joinRes?.data;
+            if (joinData) {
+              if (joinData.token) token = joinData.token;
+              if (joinData.channelName) channelName = joinData.channelName;
+              if (joinData.uid !== undefined && joinData.uid !== null) uid = joinData.uid;
+              if (joinData.appId) appId = joinData.appId;
+            }
+          } catch (joinErr: any) {
+            console.warn("Notice: video-session/join in handleCallbackAccept warning:", joinErr);
+          }
+        }
 
         const queryParams = new URLSearchParams({
           consultationId: id,
@@ -291,6 +308,7 @@ export default function IncomingRequests() {
         if (channelName) queryParams.set("channelName", channelName);
         if (token) queryParams.set("token", token);
         if (uid) queryParams.set("uid", uid.toString());
+        if (appId) queryParams.set("appId", appId);
 
         router.push(`/call?${queryParams.toString()}`);
       }

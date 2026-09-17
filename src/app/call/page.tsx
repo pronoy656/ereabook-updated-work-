@@ -29,6 +29,7 @@ function CallPageContent() {
     const urlToken = searchParams.get('token');
     const urlUid = searchParams.get('uid');
     const urlSessionId = searchParams.get('sessionId');
+    const urlAppId = searchParams.get('appId');
     if (urlChannelName && urlToken) {
       let cleanToken = urlToken.replace(/['"]+/g, '').trim();
       if (cleanToken === 'null' || cleanToken === 'undefined' || cleanToken === '') {
@@ -38,7 +39,7 @@ function CallPageContent() {
         sessionId: urlSessionId || "",
         token: cleanToken,
         channelName: urlChannelName.trim(),
-        appId: process.env.NEXT_PUBLIC_AGORA_APP_ID || "",
+        appId: (urlAppId || process.env.NEXT_PUBLIC_AGORA_APP_ID || "").trim(),
         uid: urlUid ? (isNaN(Number(urlUid)) ? 2001 : Number(urlUid)) : 2001,
       };
     }
@@ -120,9 +121,14 @@ function CallPageContent() {
     };
 
     // If sessionData was already populated directly from searchParams (instant join from call accept),
-    // start video room instantly and fetch sidebar metadata in background.
+    // start video room instantly, ensure backend join is registered, and fetch sidebar metadata in background.
     if (sessionData && sessionData.channelName && sessionData.token) {
       setIsLoading(false);
+      if (sessionData.sessionId) {
+        api.post('/video-session/join', { sessionId: sessionData.sessionId }).catch((joinErr) => {
+          console.warn("Background join session registration (non-fatal):", joinErr?.message || joinErr);
+        });
+      }
       fetchSidebarDetails();
       return;
     }
@@ -194,15 +200,15 @@ function CallPageContent() {
         }
 
         const channelName = (joinData?.channelName || resData?.channelName || joinData?.session?.channelName || "").trim();
-        const appId = (joinData?.appId || resData?.appId || joinData?.session?.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID || "").trim();
-        const rawUid = joinData?.uid ?? resData?.uid ?? joinData?.session?.uid ?? 2001;
+        const appId = (joinData?.appId || resData?.appId || joinData?.session?.appId || searchParams.get('appId') || process.env.NEXT_PUBLIC_AGORA_APP_ID || "").trim();
+        const rawUid = Number(joinData?.uid ?? resData?.uid ?? joinData?.session?.uid ?? searchParams.get('uid') ?? 2001);
 
         const finalSessionData = {
           sessionId,
           token,
           channelName,
           appId,
-          uid: rawUid, 
+          uid: isNaN(rawUid) ? 2001 : rawUid, 
         };
 
         console.log("🛠️ AGORA JOIN PAYLOAD (REFINED):", {

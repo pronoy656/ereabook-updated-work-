@@ -326,6 +326,11 @@ export function useIncomingCallSocket() {
           queryParams.append("sessionId", sessId);
         }
 
+        const appId = joinData?.appId || incomingCall.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID;
+        if (appId) {
+          queryParams.append("appId", appId);
+        }
+
         router.push(`/call?${queryParams.toString()}`);
         setIncomingCall(null);
       } catch (error: any) {
