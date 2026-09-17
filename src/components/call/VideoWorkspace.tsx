@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { ICameraVideoTrack, IRemoteVideoTrack, IRemoteAudioTrack } from 'agora-rtc-sdk-ng';
-import { Mic, MicOff, VideoIcon, VideoOff, PhoneOff, RotateCw } from 'lucide-react';
+import { Mic, MicOff, VideoIcon, VideoOff, PhoneOff } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 
 interface VideoWorkspaceProps {
@@ -46,11 +46,6 @@ export default function VideoWorkspace({
 }: VideoWorkspaceProps) {
   const [clientImgError, setClientImgError] = useState(false);
   const [consultantImgError, setConsultantImgError] = useState(false);
-  const [remoteRotation, setRemoteRotation] = useState<number>(0);
-
-  const rotateRemoteVideo = () => {
-    setRemoteRotation(prev => (prev + 90) % 360);
-  };
   
   const localVideoRef = useCallback((node: HTMLDivElement | null) => {
     console.log("🎥 localVideoRef callback invoked. Node present:", !!node, "Track present:", !!localVideoTrack);
@@ -173,28 +168,11 @@ export default function VideoWorkspace({
            <div className="w-full h-full rounded-2xl overflow-hidden bg-black shadow-2xl relative flex items-center justify-center">
               <div 
                 ref={remoteVideoRef} 
-                style={{
-                  transform: remoteRotation ? `rotate(${remoteRotation}deg)` : undefined,
-                  transition: 'transform 0.3s ease-in-out',
-                  transformOrigin: 'center center'
-                }}
-                className={`w-full h-full relative flex items-center justify-center [&>div]:!w-full [&>div]:!h-full [&_video]:!object-cover ${
-                  remoteRotation % 180 !== 0 ? 'scale-[1.35]' : ''
-                }`}
+                className="w-full h-full relative flex items-center justify-center [&>div]:!w-full [&>div]:!h-full [&_video]:!object-cover"
               />
               <div className="absolute bottom-6 left-6 z-10 bg-black/60 px-4 py-2 rounded-lg backdrop-blur-md text-white text-sm font-semibold">
                 {clientName || "Client"}
               </div>
-
-              {/* Quick Rotate Button overlay at top left of remote video */}
-              <button
-                onClick={rotateRemoteVideo}
-                title="Rotate Video 90°"
-                className="absolute top-6 left-6 z-20 bg-black/60 hover:bg-black/80 text-white/90 hover:text-white px-3 py-2 rounded-xl backdrop-blur-md border border-white/10 transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-lg active:scale-95"
-              >
-                <RotateCw className="w-3.5 h-3.5" />
-                <span>Rotate {remoteRotation ? `(${remoteRotation}°)` : ''}</span>
-              </button>
            </div>
         )}
       </div>
@@ -241,14 +219,6 @@ export default function VideoWorkspace({
            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isVideoOff ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-700/80 text-white hover:bg-slate-600'}`}
          >
            {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
-         </button>
-
-         <button 
-           onClick={rotateRemoteVideo}
-           title="Rotate Remote Video 90°"
-           className="w-12 h-12 rounded-full flex items-center justify-center transition-all bg-slate-700/80 text-white hover:bg-slate-600 active:scale-95"
-         >
-           <RotateCw className="w-5 h-5" />
          </button>
 
          <button 
