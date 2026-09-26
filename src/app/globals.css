@@ -195,3 +195,14 @@
 .animate-glow {
   animation: glow 3s ease-in-out infinite;
 }
+
+/* Notification highlight animation — "View Request" click করলে card টি এভাবে glow করবে */
+@keyframes pulse-highlight {
+  0%   { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  50%  { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.animate-pulse-highlight {
+  animation: pulse-highlight 1.5s ease-in-out 3; /* 3 বার pulse করবে তারপর থামবে */
+}

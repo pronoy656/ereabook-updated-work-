@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { audioManager } from "@/lib/audioManager";
@@ -91,6 +92,10 @@ export function useIncomingCallSocket() {
     null
   );
   const router = useRouter();
+  const locale = useLocale(); // current locale ("de" or "en")
+
+  // locale-aware navigation helper
+  const navigate = (path: string) => router.push(`/${locale}${path}`);
 
   useEffect(() => {
     // Request notification permission and init Web Push FCM once mounted
@@ -145,7 +150,7 @@ export function useIncomingCallSocket() {
         icon: normalizedPayload.callerAvatar || normalizedPayload.callerImage || "/favicon.png",
         requireInteraction: true,
         tag: payload.sessionId || "incoming-call",
-        url: `/consultant/overview`,
+        url: `/${locale}/consultant/overview`,
       }).catch(console.error);
 
       // If caller name is missing or generic, fetch active bookings in parallel to resolve real name
@@ -220,7 +225,7 @@ export function useIncomingCallSocket() {
         body: notifMsg,
         icon: "/favicon.png",
         tag: data?._id || data?.relatedBooking || `notif-${Date.now()}`,
-        url: "/consultant/requests",
+        url: `/${locale}/consultant/requests`,
         requireInteraction: false,
       }).catch(console.error);
 
@@ -231,7 +236,20 @@ export function useIncomingCallSocket() {
         action: data?.relatedBooking
           ? {
               label: "View Request",
-              onClick: () => router.push("/consultant/requests"),
+              onClick: () => {
+                const rawType = data?.type || data?.bookingType || "";
+                const isCallback = rawType.toLowerCase().includes("callback");
+                const isSchedule =
+                  rawType.toLowerCase().includes("schedule") ||
+                  rawType.toLowerCase().includes("scheduled");
+                const tab = isCallback
+                  ? "callback"
+                  : isSchedule
+                  ? "schedule"
+                  : "callback";
+                // locale prefix সহ navigate করা → redirect এখন কাজ করবে
+                navigate(`/consultant/requests?highlight=${data.relatedBooking}&tab=${tab}`);
+              },
             }
           : undefined,
       });

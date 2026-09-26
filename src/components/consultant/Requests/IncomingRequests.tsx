@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Video, Calendar, PhoneCall, User, Clock, Check, X, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import api from '@/lib/axios';
@@ -61,9 +61,20 @@ const AcceptedActionState = ({ req }: { req: RequestData }) => {
 
 export default function IncomingRequests() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");    // URL থেকে highlight booking ID
+  const tabParam    = searchParams.get("tab");           // URL থেকে tab (callback | schedule)
+  const highlightRef = useRef<HTMLDivElement>(null);
   const [requests, setRequests] = useState<RequestData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"Schedule" | "Callback">("Schedule");
+
+  // URL এ tab param থাকলে সেই tab এ auto-switch করো
+  const getInitialTab = (): "Schedule" | "Callback" => {
+    if (tabParam?.toLowerCase().includes("callback")) return "Callback";
+    if (tabParam?.toLowerCase().includes("schedule")) return "Schedule";
+    return "Schedule"; // default
+  };
+  const [activeTab, setActiveTab] = useState<"Schedule" | "Callback">(getInitialTab);
   const [counts, setCounts] = useState({ Schedule: 0, Callback: 0 });
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
@@ -76,6 +87,27 @@ export default function IncomingRequests() {
     if (Array.isArray(payload?.results)) return payload.results;
     if (Array.isArray(payload?.data)) return payload.data;
     return [];
+  };
+
+  // API response থেকে সাঠিক total count পড়ার জন্য helper
+  // প্রথমে API এর metadata field দেখবে, না পেলে items এর length দিয়ে fallback
+  const extractTotal = (res: any): number => {
+    if (!res?.data) return 0;
+    const payload = res.data.data !== undefined ? res.data.data : res.data;
+    // Common API total fields
+    const total =
+      res.data?.total ??
+      res.data?.totalCount ??
+      res.data?.count ??
+      payload?.total ??
+      payload?.totalCount ??
+      payload?.count ??
+      payload?.pagination?.total ??
+      payload?.meta?.total ??
+      null;
+    if (total !== null) return Number(total);
+    // Fallback: list এর length
+    return extractList(res).length;
   };
 
   const mapAppointmentItem = (item: any, currentTab: "Schedule" | "Callback"): RequestData => {
@@ -133,29 +165,35 @@ export default function IncomingRequests() {
       const otherParam = activeTab === "Schedule" ? "callback" : "scheduled";
 
       // Fetch active tab appointments and other tab count
+      // limit=500 দিয়ে pagination bypass করা যাতে সব ইতেম আসে
+      const API_PARAMS = { limit: 500, page: 1 };
       const [activeRes, otherRes] = await Promise.allSettled([
-        api.get(`/consultation/my-appointments`, { params: { bookingType: activeParam } }).catch(() =>
-          api.get(`/consultation/my-bookings`)
+        api.get(`/consultation/my-appointments`, { params: { bookingType: activeParam, ...API_PARAMS } }).catch(() =>
+          api.get(`/consultation/my-bookings`, { params: API_PARAMS })
         ),
-        api.get(`/consultation/my-appointments`, { params: { bookingType: otherParam } }).catch(() =>
-          api.get(`/consultation/my-bookings`)
+        api.get(`/consultation/my-appointments`, { params: { bookingType: otherParam, ...API_PARAMS } }).catch(() =>
+          api.get(`/consultation/my-bookings`, { params: API_PARAMS })
         ),
       ]);
 
       let activeItems: any[] = [];
       let otherItems: any[] = [];
+      let activeTotal = 0;
+      let otherTotal  = 0;
 
       if (activeRes.status === 'fulfilled') {
         activeItems = extractList(activeRes.value);
+        activeTotal = extractTotal(activeRes.value); // API থেকে সাঠিক total
       }
       if (otherRes.status === 'fulfilled') {
         otherItems = extractList(otherRes.value);
+        otherTotal  = extractTotal(otherRes.value);
       }
 
-      // Update Counts
+      // Count এ এখন API এর total field ব্যবহার হবে, items.length নয়
       const newCounts = {
-        Schedule: activeTab === "Schedule" ? activeItems.length : otherItems.length,
-        Callback: activeTab === "Callback" ? activeItems.length : otherItems.length,
+        Schedule: activeTab === "Schedule" ? activeTotal : otherTotal,
+        Callback: activeTab === "Callback" ? activeTotal : otherTotal,
       };
       setCounts(newCounts);
 
@@ -209,6 +247,50 @@ export default function IncomingRequests() {
   useEffect(() => {
     refreshData();
   }, [activeTab]);
+
+  // Highlight করা card এ auto-scroll — render হওয়ার পরে scroll করা
+  useEffect(() => {
+    if (!highlightId || loading) return;
+
+    // render শেষ হওয়ার পরে scroll করার জন্য timeout
+    const timer = setTimeout(() => {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 600); // data load + render এর জন্য যথেষ্ট সময়
+
+    return () => clearTimeout(timer);
+  }, [highlightId, loading, activeTab]); // activeTab বদলালেও re-run হবে
+
+  // Real-time count update: শুধুমাত্র booking-related notification আসলে
+  // silently data re-fetch করবে। AI Summary বা অন্য notification এ করবে না।
+  useEffect(() => {
+    const BOOKING_TYPES = ["callback", "schedule", "scheduled", "appointment", "booking", "instant"];
+
+    const handleNewNotification = (event: Event) => {
+      const data = (event as CustomEvent)?.detail;
+
+      // Notification data তে booking-related কিছু আছে কিনা চেক করো
+      const isBookingRelated =
+        data?.relatedBooking ||                                          // booking ID আছে
+        data?.bookingId ||
+        BOOKING_TYPES.some((type) =>
+          data?.type?.toLowerCase().includes(type) ||                   // type field match
+          data?.title?.toLowerCase().includes(type) ||                  // title এ booking word
+          data?.message?.toLowerCase().includes(type)                   // message তে booking word
+        );
+
+      if (isBookingRelated) {
+        refreshData(true); // silent = true → কোনো loading spinner দেখাবে না
+      }
+    };
+
+    window.addEventListener("fixpair:new-notification", handleNewNotification);
+
+    return () => {
+      window.removeEventListener("fixpair:new-notification", handleNewNotification);
+    };
+  }, [activeTab]); // activeTab dependency রাখা হয়েছে যাতে সঠিক tab এর data আসে
 
   const handleAccept = async (id: string) => {
     // First mark as accepted
@@ -408,7 +490,13 @@ export default function IncomingRequests() {
             requests.map((req) => (
               <div
                 key={req.id}
-                className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-6"
+                ref={highlightId === req.id ? highlightRef : null}
+                className={cn(
+                  "bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6",
+                  highlightId === req.id
+                    ? "border-blue-400 shadow-blue-100 shadow-lg ring-2 ring-blue-300 ring-offset-2 animate-pulse-highlight"
+                    : "border-slate-100"
+                )}
               >
                 {/* Left side details */}
                 <div className="flex gap-4">
