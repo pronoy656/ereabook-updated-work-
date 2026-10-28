@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';
+import { createSocketConnection } from '@/lib/socket';
 
 export interface TranscriptLine {
   speaker: string;
@@ -20,21 +21,6 @@ interface UseTranscriptionProps {
   consultantUid?: number;
   enabled?: boolean;
   onAutoEnd?: () => void;
-}
-
-/**
- * Derive the Socket.io server URL from the REST API base URL.
- * e.g. "http://10.10.7.106:5000/api/v1" → "http://10.10.7.106:5000"
- */
-function getSocketUrl(): string {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'http://10.10.7.106:5000/api/v1';
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return 'http://10.10.7.106:5000';
-  }
 }
 
 export function useTranscription({
@@ -94,12 +80,7 @@ export function useTranscription({
       return;
     }
 
-    const socketUrl = getSocketUrl();
-    console.log('🔌 Connecting to socket at:', socketUrl);
-
-    const socket = io(socketUrl, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
+    const socket = createSocketConnection({
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
@@ -225,7 +206,7 @@ export function useTranscription({
       recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = 'de-DE';
 
       recognition.onresult = (event: any) => {
         let interimText = '';
@@ -263,6 +244,14 @@ export function useTranscription({
       };
 
       recognition.onerror = (err: any) => {
+        // Browser recognition supports one locale per run; Agora handles both.
+        if (err.error === 'language-not-supported') {
+          if (recognition.lang === 'de-DE') {
+            recognition.lang = 'en-US';
+          } else {
+            isActive = false;
+          }
+        }
         if (err.error !== 'no-speech') {
           console.warn('SpeechRecognition notice:', err.error);
         }

@@ -5,7 +5,7 @@ import { Search, Eye, FileText, Download, ExternalLink, User, Calendar, Clock, L
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn, getImageUrl, getFileUrl } from "@/lib/utils";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import {
@@ -180,7 +180,7 @@ export default function AdminReportsPage() {
                                                     variant="ghost" 
                                                     size="sm"
                                                     className="rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 h-8 px-3 text-[12px] font-bold transition-all"
-                                                    onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${report.pdfUrl}`, '_blank')}
+                                                    onClick={() => window.open(getFileUrl(report.pdfUrl), '_blank')}
                                                 >
                                                     <Download className="w-3.5 h-3.5 mr-1.5" />
                                                     PDF
@@ -276,7 +276,7 @@ export default function AdminReportsPage() {
                         </Button>
                         <Button 
                             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200 border-none"
-                            onClick={() => selectedReport && window.open(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${selectedReport.pdfUrl}`, '_blank')}
+                            onClick={() => selectedReport && window.open(getFileUrl(selectedReport.pdfUrl), '_blank')}
                         >
                             <Download className="w-4 h-4 mr-2" />
                             Download PDF Report

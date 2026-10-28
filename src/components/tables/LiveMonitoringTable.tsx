@@ -7,6 +7,7 @@ import { getImageUrl, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import { io, Socket } from "socket.io-client";
+import { createSocketConnection } from "@/lib/socket";
 import Cookies from "js-cookie";
 import {
   Dialog,
@@ -34,15 +35,6 @@ interface Session {
   pdfUrl?: string; // If invoice exists
 }
 
-function getSocketUrl(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.106:5000/api/v1";
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return "http://10.10.7.106:5000";
-  }
-}
 
 function formatLiveDuration(startedAt?: string, durationVal?: number | string | null, nowTimestamp: number = Date.now()) {
   if (startedAt) {
@@ -125,11 +117,7 @@ export default function LiveMonitoringTable() {
     const token = Cookies.get("accessToken");
     if (!token) return;
 
-    const socketUrl = getSocketUrl();
-    const socket: Socket = io(socketUrl, {
-      auth: { token },
-      transports: ["websocket", "polling"],
-    });
+    const socket: Socket = createSocketConnection();
 
     socket.on("connect", () => {
       console.log("🔌 Admin Socket connected for live monitoring");

@@ -2,18 +2,38 @@
 
 import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
+import { getServerUrl } from "./api-config";
 
 let globalSocket: Socket | null = null;
 
 export function getSocketUrl(): string {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.106:5000/api/v1";
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return "http://10.10.7.106:5000";
-  }
+  return getServerUrl();
+}
+
+/**
+ * Creates a configured Socket.IO client instance with auth & headers preset
+ */
+export function createSocketConnection(customOptions: any = {}): Socket {
+  const socketUrl = getSocketUrl();
+  const token = Cookies.get("accessToken");
+  const rawToken = token
+    ? token.startsWith("Bearer ")
+      ? token.slice(7).trim()
+      : token.trim()
+    : "";
+
+  const { extraHeaders, auth, query, ...restOptions } = customOptions;
+
+  return io(socketUrl, {
+    transports: ["websocket", "polling"],
+    extraHeaders: {
+
+      ...(extraHeaders || {}),
+    },
+    auth: auth !== undefined ? auth : (rawToken ? { token: rawToken } : undefined),
+    query,
+    ...restOptions,
+  });
 }
 
 /**
@@ -33,15 +53,8 @@ export function getSocket(): Socket | null {
       : token.trim()
     : "";
 
-  const socketUrl = getSocketUrl();
-
   if (!globalSocket) {
-    globalSocket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      auth: rawToken ? { token: rawToken } : undefined,
-      query: rawToken ? { token: rawToken } : undefined,
-      autoConnect: true,
-    });
+    globalSocket = createSocketConnection({ autoConnect: true });
 
     globalSocket.on("connect", () => {
       console.log("🔌 Connected to global Socket.io server, id:", globalSocket?.id);
