@@ -19,7 +19,7 @@ export default function ProfileGuard({ children }: { children: React.ReactNode }
         const response = await api.get('/user/profile');
         if (response.data.success && response.data.data) {
           const profile = response.data.data;
-          
+
           // Helper to safely check non-empty string or object
           const hasValue = (val: any) => {
             if (val === null || val === undefined) return false;
@@ -70,17 +70,15 @@ export default function ProfileGuard({ children }: { children: React.ReactNode }
   }, [pathname, router]);
 
   if (loading) {
-     return (
-       <div className="min-h-screen flex items-center justify-center bg-white">
-         <div className="flex flex-col items-center gap-4 animate-pulse">
-           <div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
-           <p className="text-slate-500 font-medium text-sm">Verifying profile...</p>
-         </div>
-       </div>
-     );
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+          <p className="text-slate-500 font-medium text-sm">Verifying profile...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Only render children if allowed. 
-  // If not allowed, it means a redirect is in progress, so render nothing.
   return isAllowed ? <>{children}</> : null;
 }
