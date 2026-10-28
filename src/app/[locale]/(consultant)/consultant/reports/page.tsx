@@ -19,7 +19,6 @@ import api from "@/lib/axios";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { CreateReportModal } from "./CreateReportModal";
 
 interface Report {
     _id: string;
@@ -48,8 +47,6 @@ function ReportsContent() {
     const [reports, setReports] = useState<Report[]>([]);
     const [pendingBookings, setPendingBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [selectedConsultationId, setSelectedConsultationId] = useState("");
 
     const fetchData = async () => {
         try {
@@ -202,10 +199,7 @@ function ReportsContent() {
                                 You haven't generated any consultation reports yet. Create one after completing a session.
                             </p>
                             <Button 
-                                onClick={() => {
-                                    setSelectedConsultationId("");
-                                    setIsCreateModalOpen(true);
-                                }}
+                                onClick={() => router.push('/consultant/reports/create')}
                                 variant="outline"
                                 className="rounded-xl h-11 border-blue-200 text-blue-600 hover:bg-blue-50"
                             >
@@ -296,14 +290,6 @@ function ReportsContent() {
                 </TabsContent>
             </Tabs>
 
-            <CreateReportModal 
-                open={isCreateModalOpen} 
-                onOpenChange={setIsCreateModalOpen} 
-                consultationId={selectedConsultationId}
-                onSuccess={() => {
-                    fetchData();
-                }}
-            />
         </div>
     );
 }
