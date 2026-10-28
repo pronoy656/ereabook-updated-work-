@@ -6,28 +6,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import api from "@/lib/axios";
 import { toast } from "sonner";
-
-interface Transaction {
-    _id: string;
-    transactionId: string;
-    amount: number;
-    currency: string;
-    status: string;
-    type: string;
-    createdAt: string;
-    user: { name: string } | null;
-    consultant: { name: string } | null;
-    consultation: { duration: number } | null;
-    actualDuration?: number;
-    billedDuration?: number;
-}
-
-interface PaginationData {
-    total: number;
-    limit: number;
-    page: number;
-    totalPage: number;
-}
+import { Transaction, PaginationData } from "@/types";
 
 const formatActualDuration = (duration?: number) => {
     if (duration === undefined || duration === null) return "N/A";

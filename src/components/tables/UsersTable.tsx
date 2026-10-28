@@ -12,28 +12,7 @@ import { getImageUrl } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
 import { getSocket } from "@/lib/socket";
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  activeStatus?: boolean;
-  createdAt: string;
-  image?: string;
-  stats?: {
-    avgRating: number;
-    totalReviews: number;
-  };
-}
-
-interface PaginationData {
-  total: number;
-  limit: number;
-  page: number;
-  totalPage: number;
-}
+import { User, PaginationData } from "@/types";
 
 export default function UsersTable({ role }: { role: "USER" | "CONSULTANT" }) {
   const router = useRouter();
