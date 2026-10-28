@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import api from '@/lib/axios';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, extractList } from '@/lib/utils';
 
 interface RequestData {
   id: string;
@@ -77,17 +77,6 @@ export default function IncomingRequests() {
   const [activeTab, setActiveTab] = useState<"Schedule" | "Callback">(getInitialTab);
   const [counts, setCounts] = useState({ Schedule: 0, Callback: 0 });
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-
-  const extractList = (res: any): any[] => {
-    if (!res?.data) return [];
-    const payload = res.data.data !== undefined ? res.data.data : res.data;
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.appointments)) return payload.appointments;
-    if (Array.isArray(payload?.bookings)) return payload.bookings;
-    if (Array.isArray(payload?.results)) return payload.results;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-  };
 
   // API response থেকে সাঠিক total count পড়ার জন্য helper
   // প্রথমে API এর metadata field দেখবে, না পেলে items এর length দিয়ে fallback

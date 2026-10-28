@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import api from "@/lib/axios";
 import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
+import { getSocketUrl } from "@/lib/config";
 import {
   Dialog,
   DialogContent,
@@ -32,16 +33,6 @@ interface Session {
   startedAt: string;
   status: string;
   pdfUrl?: string; // If invoice exists
-}
-
-function getSocketUrl(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.106:5000/api/v1";
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return "http://10.10.7.106:5000";
-  }
 }
 
 function formatLiveDuration(startedAt?: string, durationVal?: number | string | null, nowTimestamp: number = Date.now()) {

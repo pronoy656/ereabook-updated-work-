@@ -6,7 +6,7 @@ import { Calendar, User, Clock, Check, X, Loader2, Video, PhoneCall } from 'luci
 import api from '@/lib/axios';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, extractList } from '@/lib/utils';
 import { useTranslations, useLocale } from 'next-intl';
 
 interface RequestData {
@@ -55,17 +55,6 @@ export function UpcomingScheduledBookings() {
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [processing, setProcessing] = useState<{ id: string, type: 'accept' | 'reject' } | null>(null);
-
-  const extractList = (res: any): any[] => {
-    if (!res?.data) return [];
-    const payload = res.data.data !== undefined ? res.data.data : res.data;
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.appointments)) return payload.appointments;
-    if (Array.isArray(payload?.bookings)) return payload.bookings;
-    if (Array.isArray(payload?.results)) return payload.results;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-  };
 
   const fetchRequests = async (silent = false) => {
     try {

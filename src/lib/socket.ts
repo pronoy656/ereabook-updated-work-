@@ -2,19 +2,11 @@
 
 import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
+import { getSocketUrl } from "./config";
+
+export { getSocketUrl };
 
 let globalSocket: Socket | null = null;
-
-export function getSocketUrl(): string {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.106:5000/api/v1";
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return "http://10.10.7.106:5000";
-  }
-}
 
 /**
  * Returns a shared Socket.IO instance initialized with current auth token
@@ -44,11 +36,15 @@ export function getSocket(): Socket | null {
     });
 
     globalSocket.on("connect", () => {
-      console.log("🔌 Connected to global Socket.io server, id:", globalSocket?.id);
+      if (process.env.NODE_ENV === "development") {
+        console.log("🔌 Connected to global Socket.io server, id:", globalSocket?.id);
+      }
     });
 
     globalSocket.on("connect_error", (err) => {
-      console.warn("🔌 Socket connection error:", err.message);
+      if (process.env.NODE_ENV === "development") {
+        console.warn("🔌 Socket connection error:", err.message);
+      }
     });
   } else if (!globalSocket.connected) {
     if (rawToken) {

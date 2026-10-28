@@ -13,6 +13,7 @@ import {
   showDesktopNotification,
 } from "@/lib/notifications";
 import { initWebPush } from "@/lib/firebase";
+import { getSocketUrl } from "@/lib/config";
 
 export interface IncomingCallPayload {
   sessionId: string;
@@ -34,17 +35,6 @@ export interface IncomingCallPayload {
   avatar?: string;
   image?: string;
   [key: string]: any;
-}
-
-function getSocketUrl(): string {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.106:5000/api/v1";
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return "http://10.10.7.106:5000";
-  }
 }
 
 export function resolveCallerInfo(data: any) {

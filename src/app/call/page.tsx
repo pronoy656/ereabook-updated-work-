@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
+import { getSocketUrl } from '@/lib/config';
 
 function CallPageContent() {
   const router = useRouter();
@@ -449,11 +450,7 @@ function CallPageContent() {
     const token = Cookies.get("accessToken");
     if (!token) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://10.10.7.106:5000/api/v1";
-    let socketUrl = "http://10.10.7.106:5000";
-    try {
-      socketUrl = new URL(apiUrl).origin;
-    } catch {}
+    const socketUrl = getSocketUrl();
 
     const socket: Socket = io(socketUrl, {
       transports: ["websocket", "polling"],

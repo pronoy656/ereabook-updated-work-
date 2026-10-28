@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from '@/lib/axios';
 import { toast } from 'sonner';
+import { getImageUrl as resolveImageUrl } from '@/lib/utils';
 
 export default function ConsultantSettings() {
   const [isSaved, setIsSaved] = useState(false);
@@ -37,15 +38,7 @@ export default function ConsultantSettings() {
   });
 
   const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return "https://i.ibb.co/z5YHLV9/profile.png";
-    if (imagePath.startsWith('http') || imagePath.startsWith('blob:')) return imagePath;
-    
-    // Extract base URL (e.g. http://10.10.7.106:5000 from the api/v1 route)
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL 
-      ? process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '') 
-      : 'http://10.10.7.106:5000';
-      
-    return `${baseUrl}${imagePath}`;
+    return resolveImageUrl(imagePath) || "https://i.ibb.co/z5YHLV9/profile.png";
   };
 
   const fetchProfile = async () => {

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import api from '@/lib/axios';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, extractList } from '@/lib/utils';
 
 interface HistoryRequestData {
   id: string;
@@ -27,18 +27,6 @@ export default function HistoryRequests() {
   const [activeTab, setActiveTab] = useState<"instant" | "callback" | "scheduled">("instant");
   const [counts, setCounts] = useState({ instant: 0, callback: 0, scheduled: 0 });
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-
-  const extractList = (res: any): any[] => {
-    if (!res?.data) return [];
-    const payload = res.data.data !== undefined ? res.data.data : res.data;
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.appointments)) return payload.appointments;
-    if (Array.isArray(payload?.bookings)) return payload.bookings;
-    if (Array.isArray(payload?.history)) return payload.history;
-    if (Array.isArray(payload?.results)) return payload.results;
-    if (Array.isArray(payload?.data)) return payload.data;
-    return [];
-  };
 
   const mapHistoryItem = (item: any, currentTab: "instant" | "callback" | "scheduled"): HistoryRequestData => {
     let timeDisplay = "History Record";

@@ -60,10 +60,8 @@ export default function AvailabilityManagement() {
 
   // Handle Save Changes
   const handleSave = async () => {
-    console.log("handleSave function triggered");
     setSaving(true);
     try {
-      console.log("Current availabilityData state:", availabilityData);
       const today = new Date();
       const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 

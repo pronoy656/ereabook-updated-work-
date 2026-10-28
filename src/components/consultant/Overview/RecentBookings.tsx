@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, ArrowRight, Check, X, User } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, extractList } from '@/lib/utils';
 import { useTranslations, useLocale } from 'next-intl';
 
 export function RecentBookings() {
@@ -26,15 +26,6 @@ export function RecentBookings() {
         if (recentRes.status === 'fulfilled' && Array.isArray(recentRes.value.data?.data)) {
           rawList = [...recentRes.value.data.data];
         }
-
-        const extractList = (res: any): any[] => {
-          if (!res?.data) return [];
-          const p = res.data.data !== undefined ? res.data.data : res.data;
-          if (Array.isArray(p)) return p;
-          if (Array.isArray(p?.bookings)) return p.bookings;
-          if (Array.isArray(p?.appointments)) return p.appointments;
-          return [];
-        };
 
         if (bookingsRes.status === 'fulfilled') {
           rawList = [...rawList, ...extractList(bookingsRes.value)];

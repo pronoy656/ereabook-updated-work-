@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import api from '@/lib/axios';
+import { getSocketUrl } from '@/lib/config';
 
 export interface TranscriptLine {
   speaker: string;
@@ -20,21 +21,6 @@ interface UseTranscriptionProps {
   consultantUid?: number;
   enabled?: boolean;
   onAutoEnd?: () => void;
-}
-
-/**
- * Derive the Socket.io server URL from the REST API base URL.
- * e.g. "http://10.10.7.106:5000/api/v1" → "http://10.10.7.106:5000"
- */
-function getSocketUrl(): string {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'http://10.10.7.106:5000/api/v1';
-  try {
-    const url = new URL(apiUrl);
-    return url.origin;
-  } catch {
-    return 'http://10.10.7.106:5000';
-  }
 }
 
 export function useTranscription({
