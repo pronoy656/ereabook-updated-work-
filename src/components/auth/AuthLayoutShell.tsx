@@ -5,7 +5,7 @@ import { PropsWithChildren } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 type AuthLayoutShellProps = PropsWithChildren<{
   title?: string;

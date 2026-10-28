@@ -1,4 +1,4 @@
-import IncomingRequests from "@/components/consultant/Requests/IncomingRequests";
+import IncomingRequests from "@/components/consultant/requests/IncomingRequests";
 
 export default function RequestsPage() {
   return (

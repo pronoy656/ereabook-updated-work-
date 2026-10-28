@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Clock, ShieldCheck } from "lucide-react";
-import PaymentsTable from "@/components/tables/PaymentsTable";
+import PaymentsTable from "@/components/admin/payments/PaymentsTable";
 import api from "@/lib/axios";
 
 export default function PaymentsPage() {

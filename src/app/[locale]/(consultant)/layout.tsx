@@ -2,7 +2,7 @@ import Sidebar from "@/components/consultant/Sidebar";
 import TopBar from "@/components/consultant/TopBar";
 import IncomingCallListener from "@/components/consultant/IncomingCallListener";
 import ProfileGuard from "@/components/consultant/ProfileGuard";
-import NotificationPermissionBanner from "@/components/NotificationPermissionBanner";
+import NotificationPermissionBanner from "@/components/common/NotificationPermissionBanner";
 
 export default function DashboardLayout({
   children,

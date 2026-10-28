@@ -1,5 +1,5 @@
 "use client"
-import HistoryRequests from "@/components/consultant/Requests/HistoryRequests";
+import HistoryRequests from "@/components/consultant/requests/HistoryRequests";
 
 export default function RequestsHistoryPage() {
   return (

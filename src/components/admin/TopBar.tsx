@@ -26,8 +26,8 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import NotificationDropdown from "@/components/NotificationDropdown";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import NotificationDropdown from "@/components/common/NotificationDropdown";
 
 export default function TopBar() {
   const router = useRouter();

@@ -1,4 +1,4 @@
-import AvailabilityManagement from '@/components/consultant/Availability/AvailabilityManagement';
+import AvailabilityManagement from '@/components/consultant/availability/AvailabilityManagement';
 
 export default function Page() {
   return (

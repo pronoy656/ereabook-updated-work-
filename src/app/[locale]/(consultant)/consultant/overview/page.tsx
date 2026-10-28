@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/axios';
-import { ConsultantStatCard } from '@/components/consultant/Overview/ConsultantStatCard';
-import { ConsultationOverviewChart } from '@/components/consultant/Overview/ConsultationOverviewChart';
-import { MyRatingCard } from '@/components/consultant/Overview/MyRatingCard';
-import { RecentBookings } from '@/components/consultant/Overview/RecentBookings';
-import RecentFeedback from '@/components/consultant/Overview/RecentFeedback';
-import { UpcomingScheduledBookings } from '@/components/consultant/Overview/UpcomingScheduledBookings';
+import { ConsultantStatCard } from '@/components/consultant/overview/ConsultantStatCard';
+import { ConsultationOverviewChart } from '@/components/consultant/overview/ConsultationOverviewChart';
+import { MyRatingCard } from '@/components/consultant/overview/MyRatingCard';
+import { RecentBookings } from '@/components/consultant/overview/RecentBookings';
+import RecentFeedback from '@/components/consultant/overview/RecentFeedback';
+import { UpcomingScheduledBookings } from '@/components/consultant/overview/UpcomingScheduledBookings';
 import { Calendar as CalendarIcon, CheckCircle2, Video, Clock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';

@@ -5,7 +5,7 @@ import api from '@/lib/axios';
 import { ArrowLeft, User, Mail, Phone, Calendar as CalendarIcon, CheckCircle2, Video, Clock, Star } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 import { getSocket } from '@/lib/socket';
-import { ConsultantStatCard } from '@/components/consultant/Overview/ConsultantStatCard';
+import { ConsultantStatCard } from '@/components/consultant/overview/ConsultantStatCard';
 import { ConsultantPerformanceChart } from '@/components/admin/users/ConsultantPerformanceChart';
 
 export default function ConsultantPerformancePage({ params }: { params: Promise<{ id: string }> }) {
