@@ -8,12 +8,9 @@ import {
   LayoutDashboard,
   Clock,
   ClipboardList,
-  Stethoscope,
   FileText,
   Settings,
-  HelpCircle,
   LogOut,
-  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/axios";
@@ -39,7 +36,6 @@ export default function Sidebar({ active }: { active?: string }) {
         { href: "/consultant/availability", label: t("unavailability"), Icon: Clock },
         { href: "/consultant/requests", label: t("requests"), Icon: ClipboardList },
         { href: "/consultant/reports", label: t("reports"), Icon: FileText },
-        // { href: "/consultant/earnings", label: t("earnings"), Icon: Wallet },
       ]
     },
     {
