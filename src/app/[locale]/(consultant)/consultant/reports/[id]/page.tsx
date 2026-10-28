@@ -13,6 +13,7 @@ import api from "@/lib/axios";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AISummaryCard, AISummaryData } from "@/components/consultant/reports/AISummaryCard";
+import { getFileUrl } from "@/lib/utils";
 
 interface ReportDetail {
     _id: string;
@@ -96,13 +97,6 @@ export default function ReportDetailsPage() {
 
     if (!report) return null;
 
-    const getAssetUrl = (path: string) => {
-        if (!path) return '';
-        if (path.startsWith('http') || path.startsWith('data:')) return path;
-        const baseUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api\/v1\/?$/, '');
-        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-        return `${baseUrl}${normalizedPath}`;
-    };
 
     const formatDuration = (totalSeconds: number) => {
         if (!totalSeconds) return "0 min 17 sec";
@@ -245,7 +239,7 @@ export default function ReportDetailsPage() {
                             {productsList.map((prod, idx) => (
                                 <div key={idx} className="bg-white border border-slate-200/80 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                                     {prod.image && prod.image.trim() !== '' ? (
-                                        <img src={getAssetUrl(prod.image)} alt={prod.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-100" />
+                                        <img src={getFileUrl(prod.image)} alt={prod.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-100" />
                                     ) : (
                                         <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-lg shrink-0">
                                             🛍️
@@ -307,9 +301,9 @@ export default function ReportDetailsPage() {
                     {imagesList.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {imagesList.map((img, idx) => (
-                                <a key={idx} href={getAssetUrl(img)} target="_blank" rel="noopener noreferrer"
+                                <a key={idx} href={getFileUrl(img)} target="_blank" rel="noopener noreferrer"
                                     className="block rounded-2xl overflow-hidden border border-slate-200 aspect-square hover:opacity-90 transition-opacity">
-                                    <img src={getAssetUrl(img)} alt="Attachment" className="w-full h-full object-cover" />
+                                    <img src={getFileUrl(img)} alt="Attachment" className="w-full h-full object-cover" />
                                 </a>
                             ))}
                         </div>

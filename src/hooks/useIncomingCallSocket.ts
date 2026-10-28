@@ -13,7 +13,7 @@ import {
   showDesktopNotification,
 } from "@/lib/notifications";
 import { initWebPush } from "@/lib/firebase";
-import { getSocketUrl } from "@/lib/config";
+import { createSocketConnection } from "@/lib/socket";
 
 export interface IncomingCallPayload {
   sessionId: string;
@@ -36,6 +36,7 @@ export interface IncomingCallPayload {
   image?: string;
   [key: string]: any;
 }
+
 
 export function resolveCallerInfo(data: any) {
   const name =
@@ -103,13 +104,7 @@ export function useIncomingCallSocket() {
       return;
     }
 
-    const rawToken = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
-    const socketUrl = getSocketUrl();
-    const socket: Socket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      auth: { token: rawToken },
-      query: { token: rawToken },
-    });
+    const socket: Socket = createSocketConnection();
 
     socket.on("connect", () => {
       console.log("🔌 Consultant Socket connected for incoming calls & notifications");
@@ -199,9 +194,20 @@ export function useIncomingCallSocket() {
     socket.on("session-ended", handleCallCancelled);
     socket.on("session_ended", handleCallCancelled);
     socket.on("consultation-cancelled", handleCallCancelled);
+    socket.on("consultation-auto-ended", handleCallCancelled);
+
+    // Consultant Presence Update Broadcast
+    socket.on("consultant:status-changed", (data: any) => {
+      console.log("🟢 Consultant presence status changed:", data);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("fixpair:status-changed", { detail: data })
+        );
+      }
+    });
 
     // 3. General In-App Notifications (Callbacks, Scheduled Bookings, System updates)
-    socket.on("notification", (data: any) => {
+    const handleNotification = (data: any) => {
       console.log("🔔 Real-time notification received:", data);
 
       // Play pleasant notification chime
@@ -250,7 +256,10 @@ export function useIncomingCallSocket() {
           new CustomEvent("fixpair:new-notification", { detail: data })
         );
       }
-    });
+    };
+
+    socket.on("notification", handleNotification);
+    socket.on("new-notification", handleNotification);
 
     // 4. AI Summary Ready Event
     socket.on("ai-summary-ready", (data: any) => {
@@ -294,10 +303,11 @@ export function useIncomingCallSocket() {
         }
 
         let joinData: any = null;
-        if (incomingCall.sessionId) {
+        const sessIdToJoin = incomingCall.sessionId || incomingCall.consultationId;
+        if (sessIdToJoin) {
           try {
             const joinResponse = await api.post("/video-session/join", {
-              sessionId: incomingCall.sessionId,
+              sessionId: sessIdToJoin,
             });
             joinData = joinResponse.data?.data;
           } catch (joinErr) {
@@ -362,10 +372,11 @@ export function useIncomingCallSocket() {
             .patch(`/consultation/status/${consId}`, { status: "rejected" })
             .catch(() => null);
         }
-        if (incomingCall.sessionId) {
+        const actionSessionId = incomingCall.sessionId || incomingCall.consultationId;
+        if (actionSessionId) {
           await api
             .post("/video-session/action", {
-              sessionId: incomingCall.sessionId,
+              sessionId: actionSessionId,
               action: "REJECT",
             })
             .catch(() => null);

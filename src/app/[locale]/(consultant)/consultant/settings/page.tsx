@@ -49,7 +49,7 @@ export default function ConsultantSettings() {
         setFormData({
           name: data.name || "",
           email: data.email || "",
-          image: getImageUrl(data.image),
+          image: getImageUrl(data.image) || "https://i.ibb.co/z5YHLV9/profile.png",
           consultancyType: data.consultancyType || "",
           experience: data.experience || "",
           languages: data.languages?.join(', ') || "",

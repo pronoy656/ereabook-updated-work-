@@ -9,6 +9,31 @@ export { getSocketUrl };
 let globalSocket: Socket | null = null;
 
 /**
+ * Creates a configured Socket.IO client instance with auth & headers preset
+ */
+export function createSocketConnection(customOptions: any = {}): Socket {
+  const socketUrl = getSocketUrl();
+  const token = Cookies.get("accessToken");
+  const rawToken = token
+    ? token.startsWith("Bearer ")
+      ? token.slice(7).trim()
+      : token.trim()
+    : "";
+
+  const { extraHeaders, auth, query, ...restOptions } = customOptions;
+
+  return io(socketUrl, {
+    transports: ["websocket", "polling"],
+    extraHeaders: {
+      ...(extraHeaders || {}),
+    },
+    auth: auth !== undefined ? auth : (rawToken ? { token: rawToken } : undefined),
+    query,
+    ...restOptions,
+  });
+}
+
+/**
  * Returns a shared Socket.IO instance initialized with current auth token
  */
 export function getSocket(): Socket | null {
@@ -25,15 +50,8 @@ export function getSocket(): Socket | null {
       : token.trim()
     : "";
 
-  const socketUrl = getSocketUrl();
-
   if (!globalSocket) {
-    globalSocket = io(socketUrl, {
-      transports: ["websocket", "polling"],
-      auth: rawToken ? { token: rawToken } : undefined,
-      query: rawToken ? { token: rawToken } : undefined,
-      autoConnect: true,
-    });
+    globalSocket = createSocketConnection({ autoConnect: true });
 
     globalSocket.on("connect", () => {
       if (process.env.NODE_ENV === "development") {

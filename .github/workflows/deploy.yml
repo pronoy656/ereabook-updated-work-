@@ -1,0 +1,171 @@
+﻿name: Deploy Fixpair Dashboard to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Next.js to EC2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          ENV_CONTENT: ${{ secrets.ENV_FILE }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          envs: ENV_CONTENT
+          script: |
+            export PATH=$PATH:/usr/bin:/usr/local/bin
+            set -e
+
+            echo "--> Checking and auto-installing server prerequisites..."
+            # 1. Setup Swap memory if not present
+            if [ ! -f /swapfile ]; then
+              echo "--> Creating 2GB swap memory..."
+              sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab || true
+            fi
+
+            # 2. Install Node.js 20 and npm if missing
+            if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+              echo "--> Node.js/npm not found. Installing Node.js 20 LTS..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            fi
+
+            # 3. Install PM2 if missing
+            if ! command -v pm2 >/dev/null 2>&1; then
+              echo "--> Installing PM2 globally..."
+              sudo npm install -g pm2
+            fi
+
+            # 4. Install Nginx and Certbot if missing
+            if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; then
+              echo "--> Installing Nginx and Certbot..."
+              sudo apt-get update
+              sudo apt-get install -y nginx certbot python3-certbot-nginx
+            fi
+
+            # 5. Configure Nginx Reverse Proxy for both domains
+            if [ ! -f /etc/nginx/sites-available/fixpair ]; then
+              echo "--> Configuring Nginx for api.getfixpair.com and dashboard.getfixpair.com..."
+              sudo bash -c 'cat > /etc/nginx/sites-available/fixpair' << 'EOF_NGINX'
+            server {
+                listen 80;
+                server_name api.getfixpair.com;
+
+                client_max_body_size 50M;
+
+                location / {
+                    proxy_pass http://127.0.0.1:5000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                location /socket.io/ {
+                    proxy_pass http://127.0.0.1:5000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "Upgrade";
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                }
+            }
+
+            server {
+                listen 80;
+                server_name dashboard.getfixpair.com;
+
+                client_max_body_size 50M;
+
+                location / {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                location /_next/static {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_cache_bypass $http_upgrade;
+                }
+            }
+            EOF_NGINX
+
+              sudo ln -sf /etc/nginx/sites-available/fixpair /etc/nginx/sites-enabled/
+              sudo rm -f /etc/nginx/sites-enabled/default
+              sudo nginx -t
+              sudo systemctl restart nginx
+            fi
+
+            # 6. Auto-issue SSL (HTTPS) via Certbot
+            if [ ! -d /etc/letsencrypt/live/api.getfixpair.com ] && [ ! -d /etc/letsencrypt/live/dashboard.getfixpair.com ]; then
+              echo "--> Setting up free SSL certificates for api.getfixpair.com and dashboard.getfixpair.com..."
+              sudo certbot --nginx -d api.getfixpair.com -d dashboard.getfixpair.com --non-interactive --agree-tos --register-unsafely-without-email --redirect || true
+            fi
+
+            TARGET_DIR="/var/www/fixpair-dashboard"
+
+            echo "--> Ensuring deployment directory exists..."
+            if [ ! -d "$TARGET_DIR/.git" ]; then
+              echo "Directory $TARGET_DIR does not exist. Initializing clone..."
+              sudo mkdir -p "$TARGET_DIR"
+              sudo chown -R ubuntu:ubuntu "$TARGET_DIR"
+              git clone https://github.com/mdbayzid131/Fixpair-Dashboard.git "$TARGET_DIR"
+            fi
+
+            cd "$TARGET_DIR"
+
+            echo "--> Fetching latest changes from origin/main..."
+            git fetch --all
+            git reset --hard origin/main
+
+            # Write .env safely if provided in GitHub Secrets
+            if [ -n "$ENV_CONTENT" ]; then
+              echo "--> Writing .env from GitHub Secret ENV_FILE..."
+              printf '%s\n' "$ENV_CONTENT" > .env
+            elif [ ! -f .env ]; then
+              if [ -f .env.example ]; then
+                echo "--> .env not found. Creating from .env.example..."
+                cp .env.example .env
+              fi
+            fi
+
+            echo "--> Installing dependencies..."
+            npm install
+
+            echo "--> Building Next.js application..."
+            npm run build
+
+            echo "--> Managing PM2 Process..."
+            if pm2 describe fixpair-dashboard > /dev/null 2>&1; then
+              echo "Reloading existing PM2 process..."
+              pm2 reload ecosystem.config.js
+            else
+              echo "Starting PM2 process for the first time..."
+              pm2 start ecosystem.config.js
+            fi
+            pm2 save
+
+            echo "--> Next.js Dashboard deployment completed successfully!"

@@ -1,21 +1,28 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { getServerOrigin } from "./config";
 
+export { getServerOrigin };
+export const getServerUrl = getServerOrigin;
+
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export function getImageUrl(imagePath?: string | null): string | undefined {
-  if (!imagePath) return undefined;
-  
-  const normalizedPath = imagePath.replace(/\\/g, '/');
+export function getFileUrl(filePath?: string | null): string {
+  if (!filePath) return '';
+  const normalizedPath = filePath.replace(/\\/g, '/');
   if (normalizedPath.startsWith('http') || normalizedPath.startsWith('data:') || normalizedPath.startsWith('blob:')) {
     return normalizedPath;
   }
   
   const origin = getServerOrigin();
   return `${origin}${normalizedPath.startsWith('/') ? '' : '/'}${normalizedPath}`;
+}
+
+export function getImageUrl(imagePath?: string | null): string | undefined {
+  if (!imagePath) return undefined;
+  return getFileUrl(imagePath);
 }
 
 /**
