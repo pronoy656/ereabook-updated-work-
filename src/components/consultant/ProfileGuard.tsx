@@ -38,7 +38,7 @@ export default function ProfileGuard({ children }: { children: React.ReactNode }
           );
 
           if (!isComplete) {
-            if (pathname !== '/consultant/settings') {
+            if (!pathname.includes('/consultant/settings')) {
               if (isMounted) {
                 toast.error("Please complete your profile to navigate.");
                 router.replace('/consultant/settings?forced=true');
