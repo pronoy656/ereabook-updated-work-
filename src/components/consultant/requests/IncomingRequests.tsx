@@ -11,7 +11,7 @@ import { getImageUrl, extractList } from '@/lib/utils';
 
 interface RequestData {
   id: string;
-  tabType: "Instant" | "Schedule" | "Callback";
+  tabType: "Schedule" | "Callback";
   name: string;
   image?: string;
   requestType: string;
@@ -20,7 +20,6 @@ interface RequestData {
   notes: string;
   status: "pending" | "accepted" | string;
 }
-
 
 // Helper Component to handle independent Live Countdowns and State Transitions for accepted requests
 const AcceptedActionState = ({ req }: { req: RequestData }) => {
@@ -37,20 +36,10 @@ const AcceptedActionState = ({ req }: { req: RequestData }) => {
     router.push(`/call?consultationId=${req.id}`);
   };
 
-  // If it's an Instant request and we're joining via popup, hide the manual Join Call button
-  if (req.tabType === "Instant") {
-    return (
-      <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/80 select-none cursor-default">
-        <Check className="w-3.5 h-3.5" /> Accepted
-      </span>
-    );
-  }
-
-  // Once the time arrives (or if it's a Callback default)
   return (
     <button
       onClick={handleJoinCall}
-      className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 animate-in zoom-in duration-300"
+      className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 animate-in zoom-in duration-300 cursor-pointer"
     >
       {req.tabType === "Callback" ? <PhoneCall className="w-4 h-4" /> : <Video className="w-4 h-4" />} 
       {req.tabType === "Callback" ? "Call Now" : "Join Call"}
@@ -58,32 +47,27 @@ const AcceptedActionState = ({ req }: { req: RequestData }) => {
   );
 };
 
-
 export default function IncomingRequests() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const highlightId = searchParams.get("highlight");    // URL থেকে highlight booking ID
-  const tabParam    = searchParams.get("tab");           // URL থেকে tab (callback | schedule)
+  const highlightId = searchParams.get("highlight");
+  const tabParam = searchParams.get("tab");
   const highlightRef = useRef<HTMLDivElement>(null);
   const [requests, setRequests] = useState<RequestData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // URL এ tab param থাকলে সেই tab এ auto-switch করো
   const getInitialTab = (): "Schedule" | "Callback" => {
     if (tabParam?.toLowerCase().includes("callback")) return "Callback";
     if (tabParam?.toLowerCase().includes("schedule")) return "Schedule";
-    return "Schedule"; // default
+    return "Schedule";
   };
   const [activeTab, setActiveTab] = useState<"Schedule" | "Callback">(getInitialTab);
   const [counts, setCounts] = useState({ Schedule: 0, Callback: 0 });
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
-  // API response থেকে সাঠিক total count পড়ার জন্য helper
-  // প্রথমে API এর metadata field দেখবে, না পেলে items এর length দিয়ে fallback
   const extractTotal = (res: any): number => {
     if (!res?.data) return 0;
     const payload = res.data.data !== undefined ? res.data.data : res.data;
-    // Common API total fields
     const total =
       res.data?.total ??
       res.data?.totalCount ??
@@ -95,12 +79,11 @@ export default function IncomingRequests() {
       payload?.meta?.total ??
       null;
     if (total !== null) return Number(total);
-    // Fallback: list এর length
     return extractList(res).length;
   };
 
   const mapAppointmentItem = (item: any, currentTab: "Schedule" | "Callback"): RequestData => {
-    let timeDisplay = "Instant";
+    let timeDisplay = "Scheduled";
     let scheduledAt = item.createdAt ? new Date(item.createdAt).getTime() : Date.now();
 
     try {
@@ -153,8 +136,6 @@ export default function IncomingRequests() {
       const activeParam = activeTab === "Schedule" ? "scheduled" : "callback";
       const otherParam = activeTab === "Schedule" ? "callback" : "scheduled";
 
-      // Fetch active tab appointments and other tab count
-      // limit=500 দিয়ে pagination bypass করা যাতে সব ইতেম আসে
       const API_PARAMS = { limit: 500, page: 1 };
       const [activeRes, otherRes] = await Promise.allSettled([
         api.get(`/consultation/my-appointments`, { params: { bookingType: activeParam, ...API_PARAMS } }).catch(() =>
@@ -168,28 +149,25 @@ export default function IncomingRequests() {
       let activeItems: any[] = [];
       let otherItems: any[] = [];
       let activeTotal = 0;
-      let otherTotal  = 0;
+      let otherTotal = 0;
 
       if (activeRes.status === 'fulfilled') {
         activeItems = extractList(activeRes.value);
-        activeTotal = extractTotal(activeRes.value); // API থেকে সাঠিক total
+        activeTotal = extractTotal(activeRes.value);
       }
       if (otherRes.status === 'fulfilled') {
         otherItems = extractList(otherRes.value);
-        otherTotal  = extractTotal(otherRes.value);
+        otherTotal = extractTotal(otherRes.value);
       }
 
-      // Count এ এখন API এর total field ব্যবহার হবে, items.length নয়
       const newCounts = {
         Schedule: activeTab === "Schedule" ? activeTotal : otherTotal,
         Callback: activeTab === "Callback" ? activeTotal : otherTotal,
       };
       setCounts(newCounts);
 
-      // Map requests for current tab
       const mappedData = activeItems.map((item: any) => mapAppointmentItem(item, activeTab));
       
-      // Sort: pending first, then by scheduled date/created date descending
       mappedData.sort((a: any, b: any) => {
         if (a.status === 'pending' && b.status !== 'pending') return -1;
         if (a.status !== 'pending' && b.status === 'pending') return 1;
@@ -209,8 +187,6 @@ export default function IncomingRequests() {
 
   const handleStatusUpdate = async (id: string, status: string, type: 'accept' | 'reject', shouldRefresh = true) => {
     try {
-      console.log(`[Status Update] Sending PATCH request to /consultation/status/${id}`);
-      console.log(`[Status Update] Request Body:`, { status });
       setProcessing({ id, type });
       const response = await api.patch(`/consultation/status/${id}`, { status });
       if (response.data.success) {
@@ -223,7 +199,6 @@ export default function IncomingRequests() {
       return false;
     } catch (error: any) {
       console.error("[Status Update Error]:", error);
-      console.error("[Status Update Error] Response:", error?.response?.status, error?.response?.data);
       toast.error(error.response?.data?.message || `Failed to update booking status`);
       return false;
     } finally {
@@ -237,40 +212,35 @@ export default function IncomingRequests() {
     refreshData();
   }, [activeTab]);
 
-  // Highlight করা card এ auto-scroll — render হওয়ার পরে scroll করা
   useEffect(() => {
     if (!highlightId || loading) return;
 
-    // render শেষ হওয়ার পরে scroll করার জন্য timeout
     const timer = setTimeout(() => {
       if (highlightRef.current) {
         highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-    }, 600); // data load + render এর জন্য যথেষ্ট সময়
+    }, 600);
 
     return () => clearTimeout(timer);
-  }, [highlightId, loading, activeTab]); // activeTab বদলালেও re-run হবে
+  }, [highlightId, loading, activeTab]);
 
-  // Real-time count update: শুধুমাত্র booking-related notification আসলে
-  // silently data re-fetch করবে। AI Summary বা অন্য notification এ করবে না।
   useEffect(() => {
     const BOOKING_TYPES = ["callback", "schedule", "scheduled", "appointment", "booking", "instant"];
 
     const handleNewNotification = (event: Event) => {
       const data = (event as CustomEvent)?.detail;
 
-      // Notification data তে booking-related কিছু আছে কিনা চেক করো
       const isBookingRelated =
-        data?.relatedBooking ||                                          // booking ID আছে
+        data?.relatedBooking ||
         data?.bookingId ||
         BOOKING_TYPES.some((type) =>
-          data?.type?.toLowerCase().includes(type) ||                   // type field match
-          data?.title?.toLowerCase().includes(type) ||                  // title এ booking word
-          data?.message?.toLowerCase().includes(type)                   // message তে booking word
+          data?.type?.toLowerCase().includes(type) ||
+          data?.title?.toLowerCase().includes(type) ||
+          data?.message?.toLowerCase().includes(type)
         );
 
       if (isBookingRelated) {
-        refreshData(true); // silent = true → কোনো loading spinner দেখাবে না
+        refreshData(true);
       }
     };
 
@@ -279,62 +249,12 @@ export default function IncomingRequests() {
     return () => {
       window.removeEventListener("fixpair:new-notification", handleNewNotification);
     };
-  }, [activeTab]); // activeTab dependency রাখা হয়েছে যাতে সঠিক tab এর data আসে
+  }, [activeTab]);
 
   const handleAccept = async (id: string) => {
-    // First mark as accepted
     const success = await handleStatusUpdate(id, "accepted", "accept", false);
     if (success) {
-      // Then immediately move to confirmed to keep mobile app in sync
       await handleStatusUpdate(id, "confirmed", "accept", true);
-    } else {
-      setProcessing(null);
-    }
-  };
-
-  const handleInstantAccept = async (id: string) => {
-    // For instant requests, we accept, confirm, and instantly route to the call page
-    setProcessing({ id, type: 'accept' });
-    const success = await handleStatusUpdate(id, "accepted", "accept", false);
-    if (success) {
-      await handleStatusUpdate(id, "confirmed", "accept", false);
-      try {
-        let createRes = await api.post('/video-session/create', { consultationId: id }).catch(() => null);
-        let resData = createRes?.data?.data || createRes?.data;
-        let sessionId = resData?.sessionId || resData?.id || resData?._id;
-        
-        if (!sessionId) {
-          const listRes = await api.get('/video-session').catch(() => null);
-          const sessions = listRes?.data?.data || listRes?.data;
-          if (Array.isArray(sessions)) {
-            const existing = sessions.find((s: any) => s.consultation === id || s.consultation?._id === id || s.consultationId === id);
-            if (existing) sessionId = existing.sessionId || existing.id || existing._id;
-          }
-        }
-        
-        if (sessionId) {
-          const joinRes = await api.post('/video-session/join', { sessionId }).catch(() => null);
-          const joinData = joinRes?.data?.data || joinRes?.data;
-          const token = joinData?.token || resData?.token;
-          const channelName = joinData?.channelName || resData?.channelName;
-          const uid = joinData?.uid || resData?.uid;
-          
-          if (token && channelName) {
-            const queryParams = new URLSearchParams({
-              consultationId: id,
-              channelName,
-              token,
-              uid: (uid || 2001).toString(),
-              sessionId
-            });
-            router.push(`/call?${queryParams.toString()}`);
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("Pre-fetch video session error in table accept:", e);
-      }
-      router.push(`/call?consultationId=${id}`);
     } else {
       setProcessing(null);
     }
@@ -354,7 +274,6 @@ export default function IncomingRequests() {
         let uid = resData?.uid || resData?.session?.uid;
         let appId = resData?.appId || resData?.session?.appId || process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
-        // If sessionId is found, call /video-session/join to register consultant join on the backend
         if (sessionId) {
           try {
             const joinRes = await api.post('/video-session/join', { sessionId }).catch(() => null);
@@ -397,8 +316,6 @@ export default function IncomingRequests() {
   const scheduleCount = counts.Schedule;
   const callbackCount = counts.Callback;
 
-  const currentRequests = requests.filter(r => r.tabType === activeTab);
-
   return (
     <div className="w-full mx-auto space-y-8 animate-in fade-in duration-500">
 
@@ -412,7 +329,7 @@ export default function IncomingRequests() {
         </div>
         <button 
           onClick={() => router.push('/consultant/requests/history')}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-colors shadow-sm cursor-pointer"
         >
           <Clock className="w-4 h-4" /> History
         </button>
@@ -423,12 +340,10 @@ export default function IncomingRequests() {
 
         {/* Custom Tabs Navigation */}
         <div className="flex flex-col sm:flex-row border-b border-slate-100 px-2 sm:px-6">
-
-
           <button
             onClick={() => setActiveTab("Schedule")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-4 text-[14px] font-bold border-b-2 transition-colors",
+              "flex-1 flex items-center justify-center gap-2 py-4 text-[14px] font-bold border-b-2 transition-colors cursor-pointer",
               activeTab === "Schedule"
                 ? "text-blue-500 border-blue-500"
                 : "text-slate-500 hover:text-slate-700 border-transparent"
@@ -447,7 +362,7 @@ export default function IncomingRequests() {
           <button
             onClick={() => setActiveTab("Callback")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-4 text-[14px] font-bold border-b-2 transition-colors",
+              "flex-1 flex items-center justify-center gap-2 py-4 text-[14px] font-bold border-b-2 transition-colors cursor-pointer",
               activeTab === "Callback"
                ? "text-blue-500 border-blue-500"
                : "text-slate-500 hover:text-slate-700 border-transparent"
@@ -536,75 +451,48 @@ export default function IncomingRequests() {
                       <X className="w-3.5 h-3.5" /> Cancelled
                     </span>
                   ) : req.status === "accepted" || req.status === "confirmed" ? (
-                      <AcceptedActionState req={req} />
-                  ) : req.tabType === "Instant" ? (
-                      <>
-                        <button
-                          onClick={() => handleInstantAccept(req.id)}
-                          disabled={processing?.id === req.id}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 disabled:opacity-70"
-                        >
-                          {processing?.id === req.id && processing?.type === 'accept' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )} 
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleReject(req.id)}
-                          disabled={processing?.id === req.id}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-rose-500/20 transition-transform active:scale-95 disabled:opacity-70"
-                        >
-                          {processing?.id === req.id && processing?.type === 'reject' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <X className="w-4 h-4" />
-                          )} 
-                          Decline
-                        </button>
-                      </>
+                    <AcceptedActionState req={req} />
                   ) : req.tabType === "Callback" ? (
+                    <button
+                      onClick={() => handleCallbackAccept(req.id)}
+                      disabled={processing?.id === req.id}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 disabled:opacity-70 cursor-pointer"
+                    >
+                      {processing?.id === req.id && processing?.type === 'accept' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <PhoneCall className="w-4 h-4" />
+                      )} 
+                      Call Back
+                    </button>
+                  ) : (
+                    <>
                       <button
-                        onClick={() => handleCallbackAccept(req.id)}
+                        onClick={() => handleAccept(req.id)}
                         disabled={processing?.id === req.id}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-emerald-500/20 transition-transform active:scale-95 disabled:opacity-70"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#FE6D2C] hover:bg-[#E85D20] text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-[#FE6D2C]/20 transition-transform active:scale-95 disabled:opacity-70 cursor-pointer"
                       >
                         {processing?.id === req.id && processing?.type === 'accept' ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <PhoneCall className="w-4 h-4" />
+                          <Check className="w-4 h-4" />
                         )} 
-                        Call Back
+                        Accept
                       </button>
-                  ) : (
-                      <>
-                        <button
-                          onClick={() => handleAccept(req.id)}
-                          disabled={processing?.id === req.id}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#FE6D2C] hover:bg-[#E85D20] text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-[#FE6D2C]/20 transition-transform active:scale-95 disabled:opacity-70"
-                        >
-                          {processing?.id === req.id && processing?.type === 'accept' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )} 
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleReject(req.id)}
-                          disabled={processing?.id === req.id}
-                          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-70"
-                        >
-                          {processing?.id === req.id && processing?.type === 'reject' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <X className="w-4 h-4" />
-                          )} 
-                          Reject
-                        </button>
-                      </>
-                   )}
+                      <button
+                        onClick={() => handleReject(req.id)}
+                        disabled={processing?.id === req.id}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 px-8 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors cursor-pointer disabled:opacity-70"
+                      >
+                        {processing?.id === req.id && processing?.type === 'reject' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )} 
+                        Reject
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))

@@ -15,25 +15,17 @@ export default function ConsultantOverviewPage() {
   const t = useTranslations('consultant_overview');
   const { user } = useAuth();
   const [summary, setSummary] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [summaryRes, profileRes] = await Promise.allSettled([
-          api.get('/consultant/dashboard-summary'),
-          api.get('/user/profile')
-        ]);
-
-        if (summaryRes.status === 'fulfilled') {
-          setSummary(summaryRes.value.data?.data || null);
-        }
-        if (profileRes.status === 'fulfilled' && profileRes.value.data?.success) {
-          setProfile(profileRes.value.data.data);
+        const response = await api.get('/consultant/dashboard-summary');
+        if (response.data?.success || response.data?.data) {
+          setSummary(response.data.data || null);
         }
       } catch (err) {
-        console.error("Failed to fetch overview data:", err);
+        console.error("Failed to fetch overview dashboard summary:", err);
       } finally {
         setLoading(false);
       }
@@ -46,7 +38,7 @@ export default function ConsultantOverviewPage() {
     return metric.direction === 'down' ? -Math.abs(metric.changePct) : Math.abs(metric.changePct);
   };
 
-  const displayName = profile?.name || user?.name || user?.fullName;
+  const displayName = user?.name || user?.fullName;
   const userName = displayName ? displayName.trim().split(' ')[0] : 'Consultant';
 
   return (

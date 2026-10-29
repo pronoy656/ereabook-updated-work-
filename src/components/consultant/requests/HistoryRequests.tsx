@@ -22,10 +22,13 @@ interface HistoryRequestData {
 
 export default function HistoryRequests() {
   const router = useRouter();
-  const [requests, setRequests] = useState<HistoryRequestData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"instant" | "callback" | "scheduled">("instant");
-  const [counts, setCounts] = useState({ instant: 0, callback: 0, scheduled: 0 });
+  const [categorizedData, setCategorizedData] = useState<{
+    instant: HistoryRequestData[];
+    callback: HistoryRequestData[];
+    scheduled: HistoryRequestData[];
+  }>({ instant: [], callback: [], scheduled: [] });
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const mapHistoryItem = (item: any, currentTab: "instant" | "callback" | "scheduled"): HistoryRequestData => {
@@ -61,11 +64,17 @@ export default function HistoryRequests() {
     };
   };
 
+  const sortByNewest = (a: HistoryRequestData, b: HistoryRequestData) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  };
+
   const refreshData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
 
-      // Call GET /api/v1/consultation/my-appointments?bookingType=...&tab=history for instant, callback, scheduled
+      // Fetch all three appointment types in parallel
       const [instantRes, callbackRes, scheduledRes] = await Promise.allSettled([
         api.get(`/consultation/my-appointments`, { params: { bookingType: "instant", tab: "history" } }),
         api.get(`/consultation/my-appointments`, { params: { bookingType: "callback", tab: "history" } }),
@@ -100,25 +109,11 @@ export default function HistoryRequests() {
         console.warn("History fallback to my-bookings warning:", fallbackErr);
       }
 
-      // Update Counts
-      setCounts({
-        instant: instantItems.length,
-        callback: callbackItems.length,
-        scheduled: scheduledItems.length,
+      setCategorizedData({
+        instant: instantItems.map((item: any) => mapHistoryItem(item, "instant")).sort(sortByNewest),
+        callback: callbackItems.map((item: any) => mapHistoryItem(item, "callback")).sort(sortByNewest),
+        scheduled: scheduledItems.map((item: any) => mapHistoryItem(item, "scheduled")).sort(sortByNewest),
       });
-
-      // Get active items
-      const activeItems = activeTab === "instant" ? instantItems : activeTab === "callback" ? callbackItems : scheduledItems;
-      const mappedData = activeItems.map((item: any) => mapHistoryItem(item, activeTab));
-      
-      // Sort by newest first
-      mappedData.sort((a: any, b: any) => {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return timeB - timeA;
-      });
-
-      setRequests(mappedData);
     } catch (error: any) {
       if (!silent) toast.error(error.response?.data?.message || "Failed to fetch history");
       console.error("Fetch Error:", error);
@@ -127,9 +122,18 @@ export default function HistoryRequests() {
     }
   };
 
+  // Only fetch once on initial mount; switching tabs is instant without refetching or loading flash
   useEffect(() => {
     refreshData();
-  }, [activeTab]);
+  }, []);
+
+  const currentRequests = categorizedData[activeTab];
+
+  const counts = {
+    instant: categorizedData.instant.length,
+    callback: categorizedData.callback.length,
+    scheduled: categorizedData.scheduled.length,
+  };
 
   return (
     <div className="w-full mx-auto space-y-8 animate-in fade-in duration-500">
@@ -220,12 +224,12 @@ export default function HistoryRequests() {
                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
                <p className="text-slate-500 font-medium">Fetching history...</p>
             </div>
-          ) : requests.length === 0 ? (
+          ) : currentRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-center bg-white rounded-2xl border border-slate-100 shadow-sm">
               <p className="text-slate-500 font-medium">No history records found for this category.</p>
             </div>
           ) : (
-            requests.map((req) => (
+            currentRequests.map((req) => (
               <div
                 key={req.id}
                 className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-6"
