@@ -7,7 +7,6 @@ import {
   ChevronDown,
   User,
   Settings,
-  Search,
   HelpCircle
 } from "lucide-react";
 import {
@@ -50,36 +49,18 @@ export default function TopBar() {
   const { user, logout, updateUser } = useAuth();
   const [isAvailable, setIsAvailable] = useState(user?.activeStatus ?? true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [profileData, setProfileData] = useState<any>(null);
   const t = useTranslations("consultant_topbar");
 
+  // Synchronize available status with AuthContext user
   useEffect(() => {
     if (user && user.activeStatus !== undefined) {
       setIsAvailable(user.activeStatus);
     }
-    
-    // Fetch latest profile to get accurate activeStatus on refresh
-    const fetchStatus = async () => {
-      try {
-        const response = await api.get('/user/profile');
-        if (response.data.success && response.data.data) {
-          setProfileData(response.data.data);
-          if (response.data.data.activeStatus !== undefined) {
-            setIsAvailable(response.data.data.activeStatus);
-            updateUser({ activeStatus: response.data.data.activeStatus });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch current status", err);
-      }
-    };
-    
-    fetchStatus();
-  }, [user?.id, user?._id]);
+  }, [user?.activeStatus]);
 
   // Listen for real-time status update via Socket.IO
   useEffect(() => {
-    const currentId = user?._id || user?.id || profileData?._id || profileData?.id;
+    const currentId = user?._id || user?.id;
     if (!currentId) return;
 
     const socket = getSocket();
@@ -97,7 +78,7 @@ export default function TopBar() {
     return () => {
       socket.off("consultant:status-changed", handleStatusChanged);
     };
-  }, [user?._id, user?.id, profileData?._id, profileData?.id, updateUser]);
+  }, [user?._id, user?.id, updateUser]);
 
   const updateStatus = async (newStatus: boolean) => {
     try {
@@ -134,19 +115,16 @@ export default function TopBar() {
     setShowConfirmDialog(false);
   };
 
-  const displayUser = profileData || user;
-
   return (
     <div className="flex items-center justify-between px-10 py-4 border-b border-slate-100 bg-white sticky top-0 z-10 h-20">
-      <div className="flex items-center gap-8">
-
-
+      <div className="flex items-center gap-4">
+        {/* Left header / title area if needed */}
       </div>
 
       <div className="flex items-center gap-6">
-
-        <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-full border border-slate-100 hidden sm:flex">
-          <span className={`text-xs font-bold ${isAvailable ? 'text-emerald-600' : 'text-slate-400'}`}>
+        {/* Availability Toggle */}
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 px-4 py-2 rounded-2xl">
+          <span className="text-xs font-bold text-slate-600">
             {isAvailable ? 'Available' : 'Unavailable'}
           </span>
           <Switch 
@@ -164,15 +142,15 @@ export default function TopBar() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 pl-2 pr-1 py-1 hover:bg-slate-50 rounded-2xl transition-all outline-none border border-transparent hover:border-slate-100 group cursor-pointer lg:min-w-[180px]">
               <div className="hidden lg:block text-right">
-                <div className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{displayUser?.name || "Consultant"}</div>
-                <div className="text-[11px] text-slate-400 font-medium capitalize">{displayUser?.role || "Consultant"}</div>
+                <div className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{user?.name || "Consultant"}</div>
+                <div className="text-[11px] text-slate-400 font-medium capitalize">{user?.role || "Consultant"}</div>
               </div>
               <div className="relative">
-                {displayUser?.image ? (
-                  <img src={getImageUrl(displayUser.image)} alt={displayUser.name || "Avatar"} className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-emerald-600/20" />
+                {user?.image ? (
+                  <img src={getImageUrl(user.image)} alt={user.name || "Avatar"} className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-emerald-600/20" />
                 ) : (
                   <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-emerald-500/20">
-                    {getInitials(displayUser?.name)}
+                    {getInitials(user?.name)}
                   </div>
                 )}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></div>
@@ -186,16 +164,16 @@ export default function TopBar() {
               <div className="flex flex-col gap-1">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("account_info")}</p>
                 <div className="flex items-center gap-3 mt-1">
-                  {displayUser?.image ? (
-                    <img src={getImageUrl(displayUser.image)} alt={displayUser.name || "Avatar"} className="h-10 w-10 rounded-lg object-cover" />
+                  {user?.image ? (
+                    <img src={getImageUrl(user.image)} alt={user.name || "Avatar"} className="h-10 w-10 rounded-lg object-cover" />
                   ) : (
                     <div className="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 text-sm font-bold">
-                      {getInitials(displayUser?.name)}
+                      {getInitials(user?.name)}
                     </div>
                   )}
                   <div>
-                    <p className="text-sm font-bold text-slate-800">{displayUser?.name || "Consultant"}</p>
-                    <p className="text-[11px] text-slate-400">{displayUser?.email}</p>
+                    <p className="text-sm font-bold text-slate-800">{user?.name || "Consultant"}</p>
+                    <p className="text-[11px] text-slate-400">{user?.email}</p>
                   </div>
                 </div>
               </div>
@@ -211,7 +189,10 @@ export default function TopBar() {
                 <User className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
                 <span className="font-medium">{t("my_profile")}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all">
+              <DropdownMenuItem 
+                onClick={() => router.push('/consultant/settings')}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 group transition-all"
+              >
                 <Settings className="w-4 h-4 text-slate-400 group-focus:text-emerald-600" />
                 <span className="font-medium">{t("settings")}</span>
               </DropdownMenuItem>
@@ -269,4 +250,3 @@ export default function TopBar() {
     </div>
   );
 }
-
