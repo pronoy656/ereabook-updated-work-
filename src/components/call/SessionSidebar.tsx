@@ -36,13 +36,13 @@ export default function SessionSidebar({ consultationDetails, consultationId, se
   });
 
   const details = consultationDetails || {
-    topic: "Property Law Consultation",
-    context: "Reviewing commercial lease agreement structure.",
-    notes: "Client is extremely concerned about early termination clauses.",
-    clientName: "David Smith",
+    topic: "Consultation Session",
+    context: "Active consultation call.",
+    notes: "No additional notes provided.",
+    clientName: "Client",
     clientRole: "Client",
     clientImage: null,
-    clientInitials: "D",
+    clientInitials: "C",
     ratePerMinute: 1.0
   };
   const transcriptEndRef = useRef<HTMLDivElement>(null);
@@ -165,7 +165,7 @@ export default function SessionSidebar({ consultationDetails, consultationId, se
                    <div className="flex-1">
                      <h5 className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1.5">Private Note</h5>
                      <p className="text-[12.5px] text-orange-900 leading-relaxed font-medium">
-                       {details.notes}
+                       {details.notes || "No private notes provided for this session."}
                      </p>
                    </div>
                  </div>

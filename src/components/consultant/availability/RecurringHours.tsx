@@ -110,11 +110,12 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
   // Fetch slots for selected date
   useEffect(() => {
     const fetchSlots = async () => {
-      if (!selectedDateKey || !user?._id) return;
+      const userId = user?._id || user?.id;
+      if (!selectedDateKey || !userId) return;
 
       setLoadingSlots(true);
       try {
-        const response = await api.get(`/consultation/available-slots/${user._id}?date=${selectedDateKey}`);
+        const response = await api.get(`/consultation/available-slots/${userId}?date=${selectedDateKey}`);
         
         if (response.data.success) {
           const fetchedSlots = response.data.data.map((slot: any) => ({
@@ -136,7 +137,7 @@ export default function RecurringHours({ availabilityData, setAvailabilityData }
     };
 
     fetchSlots();
-  }, [selectedDateKey, user?._id, setAvailabilityData]);
+  }, [selectedDateKey, user?._id, user?.id, setAvailabilityData]);
 
   const slots = selectedDate ? (availabilityData[selectedDateKey] || []) : [];
 
